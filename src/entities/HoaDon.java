@@ -1,56 +1,65 @@
-//Nguyen Tuan Phat
 package entities;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.util.Date;
 
+/** Hóa đơn bán hàng tại quầy (POS). */
 public class HoaDon {
-    private int maHD;
-    private LocalDateTime ngayTao;
-    private double tongTien;
-    private double tienKhachTra;
-    private double tienThua;
-    private int maNV; 
-    private int maKH;    
+    private int maHoaDon;
+    private Date ngayLap;
+    private NhanVien nhanVien;
+    private KhachHang khachHang;
+    private BigDecimal tongTien;
+    private BigDecimal tienKhachDua;
+    private BigDecimal tienThua;
+    private int diemDuocTang;
+    private String trangThai;       // HOAN_TAT, DA_HUY
+    private String hinhThucThanhToan; // TIEN_MAT, CHUYEN_KHOAN
 
-    public HoaDon(int maHD, LocalDateTime ngayTao, double tongTien,
-                  double tienKhachTra, double tienThua,
-                  int maNV, int maKH) {
-        this.maHD = maHD;
-        this.ngayTao = ngayTao;
+    public HoaDon() {
+    }
+
+    public HoaDon(int maHoaDon, Date ngayLap, NhanVien nhanVien, KhachHang khachHang,
+                  BigDecimal tongTien, BigDecimal tienKhachDua, BigDecimal tienThua,
+                  int diemDuocTang, String trangThai) {
+        this.maHoaDon = maHoaDon;
+        this.ngayLap = ngayLap;
+        this.nhanVien = nhanVien;
+        this.khachHang = khachHang;
         this.tongTien = tongTien;
-        this.tienKhachTra = tienKhachTra;
+        this.tienKhachDua = tienKhachDua;
         this.tienThua = tienThua;
-        this.maNV = maNV;
-        this.maKH = maKH;  
+        this.diemDuocTang = diemDuocTang;
+        this.trangThai = trangThai;
     }
 
-    // Getters & Setters
-    public int getMaHD() { return maHD; }
-    public void setMaHD(int maHD) { this.maHD = maHD; }
+    public int getMaHoaDon() { return maHoaDon; }
+    public void setMaHoaDon(int maHoaDon) { this.maHoaDon = maHoaDon; }
 
-    public LocalDateTime getNgayTao() { return ngayTao; }
-    public void setNgayTao(LocalDateTime ngayTao) { this.ngayTao = ngayTao; }
+    public Date getNgayLap() { return ngayLap; }
+    public void setNgayLap(Date ngayLap) { this.ngayLap = ngayLap; }
 
-    public double getTongTien() { return tongTien; }
-    public void setTongTien(double tongTien) { this.tongTien = tongTien; }
+    public NhanVien getNhanVien() { return nhanVien; }
+    public void setNhanVien(NhanVien nhanVien) { this.nhanVien = nhanVien; }
 
-    public double getTienKhachTra() { return tienKhachTra; }
-    public void setTienKhachTra(double tienKhachTra) { this.tienKhachTra = tienKhachTra; }
+    public KhachHang getKhachHang() { return khachHang; }
+    public void setKhachHang(KhachHang khachHang) { this.khachHang = khachHang; }
 
-    public double getTienThua() { return tienThua; }
-    public void setTienThua(double tienThua) { this.tienThua = tienThua; }
+    public BigDecimal getTongTien() { return tongTien; }
+    public void setTongTien(BigDecimal tongTien) { this.tongTien = tongTien; }
 
-    public int getMaNV() { return maNV; }
-    public void setMaNV(int maNV) { this.maNV = maNV; }
+    public BigDecimal getTienKhachDua() { return tienKhachDua; }
+    public void setTienKhachDua(BigDecimal tienKhachDua) { this.tienKhachDua = tienKhachDua; }
 
-    public int getMaKH() { return maKH; }  
-    public void setMaKH(int maKH) { this.maKH = maKH; }  
+    public BigDecimal getTienThua() { return tienThua; }
+    public void setTienThua(BigDecimal tienThua) { this.tienThua = tienThua; }
 
-    @Override
-    public String toString() {
-        return "HoaDon [maHD=" + maHD + ", ngayTao=" + ngayTao +
-               ", tongTien=" + tongTien + ", tienKhachTra=" + tienKhachTra +
-               ", tienThua=" + tienThua + ", maNV=" + maNV +
-               ", maKH=" + maKH + "]";
-    }
+    public int getDiemDuocTang() { return diemDuocTang; }
+    public void setDiemDuocTang(int diemDuocTang) { this.diemDuocTang = diemDuocTang; }
+
+    public String getTrangThai() { return trangThai; }
+    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+
+    public String getHinhThucThanhToan() { return hinhThucThanhToan; }
+    public void setHinhThucThanhToan(String hinhThucThanhToan) { this.hinhThucThanhToan = hinhThucThanhToan; }
 }

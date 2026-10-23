@@ -1,98 +1,77 @@
 package dao;
-//người làm nguyễn tấn phát
+
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 
 import ConnectDB.DatabaseConnection;
 import entities.KhachHang;
 
+/** DAO cho khách hàng thành viên (khách lẻ không cần lưu). */
 public class KhachHangDAO {
-    private Connection getSafeConnection() throws SQLException {
-        Connection conn = DatabaseConnection.getInstance().getConnection();
-        if (conn == null || conn.isClosed()) {
-            conn = DatabaseConnection.getInstance().getConnection();
-            if (conn == null || conn.isClosed()) {
-                throw new SQLException("Không thể thiết lập kết nối đến cơ sở dữ liệu");
-            }
-        }
-        return conn;
+
+    private KhachHang map(ResultSet rs) throws SQLException {
+        return new KhachHang(
+                rs.getInt("MaKH"),
+                rs.getString("TenKH"),
+                rs.getString("SoDienThoai"),
+                rs.getInt("DiemTichLuy"),
+                rs.getBigDecimal("TongChiTieu"));
     }
-    
-    public boolean insertKhachHang(KhachHang kh) {
-        String sql = "INSERT INTO KhachHang(MaKH, ho, ten, gioiTinh, soDienThoai, email, diemTichLuy, ngayDangKy) " +
-                    "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = getSafeConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setLong(1, kh.getMaKhachHang());
-            stmt.setString(2, kh.getHo());
-            stmt.setString(3, kh.getTen());
-            stmt.setString(4, kh.getGioiTinh());
-            stmt.setString(5, kh.getSoDienThoai());
-            stmt.setString(6, kh.getEmail());
-            stmt.setInt(7, kh.getDiemTichLuy());
-            stmt.setTimestamp(8, kh.getNgayDangKy());
-
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
+    public List<KhachHang> getAll() {
+        List<KhachHang> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT * FROM KhachHang ORDER BY TenKH");
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) list.add(map(rs));
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Lỗi lấy danh sách khách hàng: " + e.getMessage());
+        }
+        return list;
+    }
+
+    public KhachHang timTheoSdt(String soDienThoai) {
+        String sql = "SELECT * FROM KhachHang WHERE SoDienThoai = ?";
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, soDienThoai);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return map(rs);
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tìm khách hàng theo SĐT: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public boolean them(KhachHang kh) {
+        String sql = "INSERT INTO KhachHang (TenKH, SoDienThoai, DiemTichLuy, TongChiTieu) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, kh.getTenKhachHang());
+            ps.setString(2, kh.getSoDienThoai());
+            ps.setInt(3, kh.getDiemTichLuy());
+            ps.setBigDecimal(4, kh.getTongChiTieu() == null ? BigDecimal.ZERO : kh.getTongChiTieu());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi thêm khách hàng: " + e.getMessage());
             return false;
         }
     }
 
-    public long generateUniqueMaKH() {
-        Random rand = new Random();
-        long maKH;
-        do {
-            maKH = 100000 + rand.nextInt(900000);
-        } while (checkMaKHTonTai(maKH));
-        return maKH;
-    }
-
-    public boolean checkMaKHTonTai(long maKH) {
-        String sql = "SELECT MaKH FROM KhachHang WHERE MaKH = ?";
-
-        try (Connection conn = getSafeConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setLong(1, maKH);
-            try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next(); 
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return true; 
+    /** Cộng điểm + tổng chi tiêu khi khách thành viên mua hàng (trong transaction bán hàng). */
+    public void congDiem(Connection conn, int maKH, int diem, BigDecimal thanhTien) throws SQLException {
+        String sql = "UPDATE KhachHang SET DiemTichLuy = DiemTichLuy + ?, TongChiTieu = TongChiTieu + ? WHERE MaKH = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, diem);
+            ps.setBigDecimal(2, thanhTien);
+            ps.setInt(3, maKH);
+            ps.executeUpdate();
         }
-    }
-    public KhachHang getKhachHangById(int maKH) {
-        String sql = "SELECT MaKH, ho, ten, gioiTinh, soDienThoai, email, diemTichLuy, ngayDangKy "
-                   + "FROM KhachHang WHERE MaKH = ?";
-        try (Connection conn = getSafeConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setLong(1, maKH);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    KhachHang kh = new KhachHang();
-                    kh.setMaKhachHang(rs.getLong("MaKH"));
-                    kh.setHo(rs.getString("ho"));
-                    kh.setTen(rs.getString("ten"));
-                    kh.setGioiTinh(rs.getString("gioiTinh"));
-                    kh.setSoDienThoai(rs.getString("soDienThoai"));
-                    kh.setEmail(rs.getString("email"));
-                    kh.setDiemTichLuy(rs.getInt("diemTichLuy"));
-                    kh.setNgayDangKy(rs.getTimestamp("ngayDangKy"));
-                    return kh;
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 }

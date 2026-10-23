@@ -1,574 +1,317 @@
 package gui;
-//Người làm Phạm Thanh Huy
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.math.BigDecimal;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+
 import dao.LoaiSanPhamDAO;
+import dao.NhaCungCapDAO;
 import dao.SanPhamDAO;
 import entities.LoaiSanPham;
+import entities.NhaCungCap;
 import entities.SanPham;
-import entities.TaiKhoan;
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.io.File;
-import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.util.List;
-import java.text.DecimalFormat;
-import java.time.LocalDateTime;
-
+/** Quản lý sản phẩm: thêm/sửa/xóa, tìm theo mã vạch/tên, cảnh báo tồn thấp. */
 public class QuanLySanPham extends JPanel {
     private static final long serialVersionUID = 1L;
-    private JTable tableLoaiSanPham, tableSanPham;
-    private DefaultTableModel modelLoaiSanPham, modelSanPham;
-    private LoaiSanPhamDAO loaiSanPhamDAO;
-    private SanPhamDAO sanPhamDAO;
-    private DecimalFormat dinhDangTien;
-    private JButton btnThem, btnSua, btnXoa;
-    private int currentMaLoai;
-    private TaiKhoan loginTaiKhoan;
-    
-    public QuanLySanPham(TaiKhoan tk) {
-    	this.loginTaiKhoan = tk;
-        setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        dinhDangTien = new DecimalFormat("#,### VNĐ");
 
-        try {
-            loaiSanPhamDAO = new LoaiSanPhamDAO();
-            sanPhamDAO = new SanPhamDAO();
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi kết nối CSDL: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-        }
+    private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
+    private final LoaiSanPhamDAO loaiDAO = new LoaiSanPhamDAO();
+    private final NhaCungCapDAO nccDAO = new NhaCungCapDAO();
 
-        createCategoryPanel();
-        createProductPanel();
-        loadLoaiSanPhamData();
-    }
+    private JTextField txtTimKiem;
+    private DefaultTableModel model;
+    private JTable bang;
+    private List<SanPham> dsHienTai;
 
-    private void createCategoryPanel() {
-        JPanel panelCategory = new JPanel(new BorderLayout());
-        panelCategory.setBorder(BorderFactory.createTitledBorder("Danh mục loại sản phẩm"));
+    public QuanLySanPham() {
+        setLayout(new BorderLayout(10, 10));
+        setBorder(new EmptyBorder(15, 15, 15, 15));
+        setBackground(Color.WHITE);
 
-        String[] columnNames = {"Mã loại", "Tên loại", "Mô tả"};
-        modelLoaiSanPham = new DefaultTableModel(columnNames, 0) {
+        JLabel lblTieuDe = new JLabel("QUẢN LÝ SẢN PHẨM");
+        lblTieuDe.setFont(new Font("SansSerif", Font.BOLD, 20));
+        lblTieuDe.setForeground(new Color(0, 102, 51));
+
+        txtTimKiem = new JTextField(20);
+        txtTimKiem.setToolTipText("Nhập mã vạch hoặc tên sản phẩm");
+        JButton btnTim = new JButton("Tìm");
+        btnTim.addActionListener(e -> taiDuLieu(txtTimKiem.getText().trim()));
+        txtTimKiem.addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        tableLoaiSanPham = new JTable(modelLoaiSanPham);
-        tableLoaiSanPham.setRowHeight(25);
-        tableLoaiSanPham.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        tableLoaiSanPham.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                int selectedRow = tableLoaiSanPham.getSelectedRow();
-                if (selectedRow >= 0) {
-                    currentMaLoai = (int) modelLoaiSanPham.getValueAt(selectedRow, 0);
-                    loadSanPhamTheoLoai(currentMaLoai);
-                    showActionButtons(true);
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER) {
+                    taiDuLieu(txtTimKiem.getText().trim());
                 }
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(tableLoaiSanPham);
-        panelCategory.add(scrollPane, BorderLayout.CENTER);
+        JButton btnThem = taoNut("Thêm mới", new Color(0, 102, 51));
+        btnThem.addActionListener(e -> moForm(null));
+        JButton btnSua = taoNut("Sửa", new Color(0, 90, 160));
+        btnSua.addActionListener(e -> {
+            SanPham sp = sanPhamDaChon();
+            if (sp != null) moForm(sp);
+        });
+        JButton btnXoa = taoNut("Xóa", new Color(180, 40, 40));
+        btnXoa.addActionListener(e -> xoaSanPham());
 
-        JButton btnRefresh = new JButton("Làm mới");
-        btnRefresh.setBackground(new Color(102, 187, 106)); 
-        btnRefresh.setForeground(Color.WHITE);
-        btnRefresh.addActionListener(e -> loadLoaiSanPhamData());
-        panelCategory.add(btnRefresh, BorderLayout.SOUTH);
+        JPanel pnlTren = new JPanel(new BorderLayout(10, 0));
+        pnlTren.setOpaque(false);
+        pnlTren.add(lblTieuDe, BorderLayout.WEST);
 
-        add(panelCategory, BorderLayout.WEST);
-    }
+        JPanel pnlTim = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+        pnlTim.setOpaque(false);
+        pnlTim.add(new JLabel("Tìm:"));
+        pnlTim.add(txtTimKiem);
+        pnlTim.add(btnTim);
+        pnlTren.add(pnlTim, BorderLayout.CENTER);
 
-    private void createProductPanel() {
-        JPanel panelProduct = new JPanel(new BorderLayout());
-        panelProduct.setBorder(BorderFactory.createTitledBorder("Danh sách sản phẩm"));
+        JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        pnlNut.setOpaque(false);
+        pnlNut.add(btnThem);
+        pnlNut.add(btnSua);
+        pnlNut.add(btnXoa);
+        pnlTren.add(pnlNut, BorderLayout.EAST);
 
-        String[] columnNames = {"Mã SP", "Tên SP", "Giá", "Trạng thái", "Hình ảnh"};
-        modelSanPham = new DefaultTableModel(columnNames, 0) {
+        model = new DefaultTableModel(
+                new Object[]{"Mã SP", "Mã vạch", "Tên sản phẩm", "Loại", "ĐVT",
+                        "Giá bán", "Giá vốn", "Tồn", "Ngưỡng", "Trạng thái", "Nhà cung cấp"}, 0) {
+            private static final long serialVersionUID = 1L;
+
             @Override
-            public boolean isCellEditable(int row, int column) {
+            public boolean isCellEditable(int r, int c) {
                 return false;
             }
         };
+        bang = new JTable(model);
+        bang.setRowHeight(26);
+        bang.getColumnModel().getColumn(0).setMaxWidth(60);
 
-        tableSanPham = new JTable(modelSanPham);
-        tableSanPham.setRowHeight(25);
-        tableSanPham.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane scr = new JScrollPane(bang);
+        scr.setBorder(BorderFactory.createTitledBorder("Danh sách sản phẩm"));
 
-        JScrollPane scrollPane = new JScrollPane(tableSanPham);
-        panelProduct.add(scrollPane, BorderLayout.CENTER);
-        
-        JLabel lblCurrentCategory;
-        if(loginTaiKhoan.getQuyen().getMaQuyen() == 1) {
-            lblCurrentCategory = new JLabel("Chọn một loại sản phẩm để chỉnh sửa");
+        add(pnlTren, BorderLayout.NORTH);
+        add(scr, BorderLayout.CENTER);
+    }
+
+    private JButton taoNut(String text, Color bg) {
+        JButton nut = new JButton(text);
+        nut.setBackground(bg);
+        nut.setForeground(Color.WHITE);
+        nut.setFocusPainted(false);
+        nut.setBorderPainted(false);
+        return nut;
+    }
+
+    /** Nạp lại danh sách (gọi khi vào màn). */
+    public void taiDuLieu() {
+        taiDuLieu(txtTimKiem == null ? "" : txtTimKiem.getText().trim());
+    }
+
+    public void taiDuLieu(String tuKhoa) {
+        dsHienTai = tuKhoa.isEmpty() ? sanPhamDAO.getAll() : sanPhamDAO.timKiem(tuKhoa);
+        model.setRowCount(0);
+        for (SanPham sp : dsHienTai) {
+            model.addRow(new Object[]{
+                    sp.getMaSanPham(),
+                    sp.getMaVach(),
+                    sp.getTenSanPham(),
+                    sp.getLoaiSanPham() == null ? "" : sp.getLoaiSanPham().getTenLoai(),
+                    sp.getDonViTinh(),
+                    String.format("%,.0f", sp.getGiaBan()),
+                    String.format("%,.0f", sp.getGiaVon() == null ? BigDecimal.ZERO : sp.getGiaVon()),
+                    sp.getTonKho(),
+                    sp.getTonToiThieu(),
+                    sp.isSapHet() ? "SẮP HẾT" : sp.getTrangThai(),
+                    sp.getTenNhaCungCap() == null ? "" : sp.getTenNhaCungCap()
+            });
+        }
+    }
+
+    private SanPham sanPhamDaChon() {
+        int row = bang.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Chọn 1 sản phẩm trong danh sách trước.");
+            return null;
+        }
+        return dsHienTai.get(row);
+    }
+
+    private void xoaSanPham() {
+        SanPham sp = sanPhamDaChon();
+        if (sp == null) return;
+        int chon = JOptionPane.showConfirmDialog(this,
+                "Xóa sản phẩm \"" + sp.getTenSanPham() + "\"?\n(Lưu ý: sản phẩm đã phát sinh hóa đơn sẽ không xóa được)",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (chon != JOptionPane.YES_OPTION) return;
+        boolean ok = sanPhamDAO.xoa(sp.getMaSanPham());
+        if (ok) {
+            JOptionPane.showMessageDialog(this, "Đã xóa.");
+            taiDuLieu();
         } else {
-            lblCurrentCategory = new JLabel("Nhân viên chọn sản phẩm để xoá");
-        }
-        lblCurrentCategory.setHorizontalAlignment(SwingConstants.CENTER);
-        panelProduct.add(lblCurrentCategory, BorderLayout.NORTH);
-
-        JPanel panelActions = new JPanel(new FlowLayout(FlowLayout.LEFT));
-
-        btnThem = new JButton("Thêm Sản Phẩm");
-        btnThem.setBackground(new Color(52, 152, 219)); 
-        btnThem.setForeground(Color.WHITE);
-
-        btnSua = new JButton("Sửa Sản Phẩm");
-        btnSua.setBackground(new Color(241, 196, 15));
-        btnSua.setForeground(Color.WHITE);
-
-        btnXoa = new JButton("Xóa Sản Phẩm");
-        btnXoa.setBackground(new Color(231, 76, 60));
-        btnXoa.setForeground(Color.WHITE);
-
-        btnThem.addActionListener(e -> openAddProductDialog());
-        btnSua.addActionListener(e -> openEditProductDialog());
-        btnXoa.addActionListener(e -> openDeleteProductDialog());
-   
-        if(loginTaiKhoan.getQuyen().getMaQuyen() == 1) {
-            panelActions.add(btnThem);
-            panelActions.add(btnSua);
-        }
-        panelActions.add(btnXoa);
-        panelProduct.add(panelActions, BorderLayout.SOUTH);
-
-        add(panelProduct, BorderLayout.CENTER);
-    }
-
-    private void showActionButtons(boolean show) {
-        btnThem.setEnabled(show);
-        btnSua.setEnabled(show);
-        btnXoa.setEnabled(show);
-    }
-
-    private void loadLoaiSanPhamData() {
-        try {
-            List<LoaiSanPham> loaiSanPhamList = loaiSanPhamDAO.getAllLoaiSanPham();
-            modelLoaiSanPham.setRowCount(0);
-
-            for (LoaiSanPham loaiSanPham : loaiSanPhamList) {
-                Object[] rowData = {
-                    loaiSanPham.getMaLoai(),
-                    loaiSanPham.getTenLoai(),
-                    loaiSanPham.getMoTa(),
-                    loaiSanPham.getIcon()
-                };
-                modelLoaiSanPham.addRow(rowData);
-            }
-
-            modelSanPham.setRowCount(0);
-            showActionButtons(false);
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Lỗi tải danh mục sản phẩm: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-        }
-    }
-
-    private void loadSanPhamTheoLoai(int maLoai) {
-        List<SanPham> sanPhamList = sanPhamDAO.getSanPhamByLoai(maLoai);
-        modelSanPham.setRowCount(0);  
-
-        for (SanPham sanPham : sanPhamList) {
-            ImageIcon imageIcon = new ImageIcon(sanPham.getHinhAnh());
-            Image image = imageIcon.getImage();
-            Image scaledImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH);
-            ImageIcon scaledImageIcon = new ImageIcon(scaledImage);
-
-            Object[] rowData = {
-                sanPham.getMaSanPham(),
-                sanPham.getTenSanPham(),
-                dinhDangTien.format(sanPham.getGia()),
-                sanPham.getTrangThai(),
-                scaledImageIcon
-            };
-            modelSanPham.addRow(rowData); 
-        }
-
-        tableSanPham.getColumnModel().getColumn(4).setCellRenderer(new ImageRenderer());
-        tableSanPham.setRowHeight(60);
-    }
-
-    private JPanel createProductForm(SanPham sanPham, JTextField txtTenSanPham, JTextField txtGia,
-                                   JComboBox<String> cboTrangThai, JTextArea txtMoTa,
-                                   JTextField txtMaLoai, JTextField txtTenLoai,
-                                   String[] hinhAnhPath, JLabel lblHinhAnh, JLabel lblPreviewImage,
-                                   boolean isEdit) {
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
-        
-        txtMoTa.setLineWrap(true);
-        JScrollPane scrollMoTa = new JScrollPane(txtMoTa);
-        
-        txtTenLoai.setEditable(false);
-        txtMaLoai.setEditable(!isEdit);
-        
-        lblPreviewImage.setPreferredSize(new Dimension(150, 150));
-        lblPreviewImage.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        lblPreviewImage.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        JButton btnChonAnh = new JButton(isEdit ? "Thay đổi hình ảnh" : "Chọn ảnh");
-        
-        if (isEdit && sanPham.getHinhAnh() != null && !sanPham.getHinhAnh().isEmpty()) {
-            displayImage(sanPham.getHinhAnh(), lblPreviewImage);
-        }
-        
-        btnChonAnh.addActionListener(e -> selectImage(formPanel, hinhAnhPath, lblHinhAnh, lblPreviewImage));
-        
-        gbc.gridx = 0; gbc.gridy = 0;
-        formPanel.add(new JLabel("Tên sản phẩm:"), gbc);
-        
-        gbc.gridx = 1;
-        formPanel.add(txtTenSanPham, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 1;
-        formPanel.add(new JLabel("Giá:"), gbc);
-        
-        gbc.gridx = 1;
-        formPanel.add(txtGia, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 2;
-        formPanel.add(new JLabel("Trạng thái:"), gbc);
-        
-        gbc.gridx = 1;
-        formPanel.add(cboTrangThai, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 3;
-        formPanel.add(new JLabel("Mô tả sản phẩm:"), gbc);
-        
-        gbc.gridx = 1;
-        formPanel.add(scrollMoTa, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 4;
-        formPanel.add(new JLabel("Mã loại sản phẩm:"), gbc);
-        
-        gbc.gridx = 1;
-        if (isEdit) {
-            JPanel loaiPanel = new JPanel(new BorderLayout());
-            loaiPanel.add(txtMaLoai, BorderLayout.CENTER);
-            JButton btnTimLoai = new JButton("Tìm");
-            loaiPanel.add(btnTimLoai, BorderLayout.EAST);
-            formPanel.add(loaiPanel, gbc);
-            
-            btnTimLoai.addActionListener(e -> searchProductCategory(formPanel, txtMaLoai, txtTenLoai));
-        } else {
-            formPanel.add(txtMaLoai, gbc);
-        }
-        
-        gbc.gridx = 0; gbc.gridy = 5;
-        formPanel.add(new JLabel("Tên loại:"), gbc);
-        
-        gbc.gridx = 1;
-        formPanel.add(txtTenLoai, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 6;
-        formPanel.add(btnChonAnh, gbc);
-        
-        gbc.gridx = 1;
-        formPanel.add(lblHinhAnh, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 7;
-        gbc.gridwidth = 2;
-        formPanel.add(lblPreviewImage, gbc);
-        
-        return formPanel;
-    }
-
-    private void selectImage(Component parent, String[] hinhAnhPath, JLabel lblHinhAnh, JLabel lblPreviewImage) {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
-                "Hình ảnh", "jpg", "jpeg", "png", "gif"));
-        int result = fileChooser.showOpenDialog(parent);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fileChooser.getSelectedFile();
-            hinhAnhPath[0] = selectedFile.getAbsolutePath();
-            lblHinhAnh.setText(selectedFile.getName());
-            displayImage(hinhAnhPath[0], lblPreviewImage);
-        }
-    }
-
-    private void displayImage(String imagePath, JLabel imageLabel) {
-        try {
-            ImageIcon imageIcon = new ImageIcon(imagePath);
-            Image image = imageIcon.getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH);
-            imageLabel.setIcon(new ImageIcon(image));
-        } catch (Exception ex) {
-            imageLabel.setIcon(null);
-            imageLabel.setText("Không thể tải hình ảnh");
-        }
-    }
-
-    private void searchProductCategory(Component parent, JTextField txtMaLoai, JTextField txtTenLoai) {
-        try {
-            int maLoai = Integer.parseInt(txtMaLoai.getText().trim());
-            try {
-                LoaiSanPham loaiSP = loaiSanPhamDAO.getLoaiSanPhamById(maLoai);
-                if (loaiSP != null) {
-                    txtTenLoai.setText(loaiSP.getTenLoai());
-                } else {
-                    txtTenLoai.setText("Không tìm thấy");
-                    JOptionPane.showMessageDialog(parent, "Không tìm thấy loại sản phẩm với mã " + maLoai, 
-                            "Thông báo", JOptionPane.WARNING_MESSAGE);
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(parent, "Mã loại không hợp lệ", 
+            JOptionPane.showMessageDialog(this,
+                    "Không xóa được (sản phẩm có thể đã phát sinh trong hóa đơn/phiếu nhập).",
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private SanPham validateAndCreateProduct(Component parent, int maSanPham, String[] hinhAnhPath,
-                                           JTextField txtTenSanPham, JTextField txtGia, JComboBox<String> cboTrangThai,
-                                           JTextArea txtMoTa, JTextField txtMaLoai, LocalDateTime ngayTao) throws Exception {
-        String tenSanPham = txtTenSanPham.getText().trim();
-        if (tenSanPham.isEmpty()) {
-            JOptionPane.showMessageDialog(parent, "Tên sản phẩm không được để trống", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return null;
-        }
-        
-        BigDecimal gia;
-        try {
-            gia = new BigDecimal(txtGia.getText().trim().replace(",", ""));
-            if (gia.compareTo(BigDecimal.ZERO) < 0) {
-                JOptionPane.showMessageDialog(parent, "Giá không được âm", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return null;
-            }
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(parent, "Giá không hợp lệ", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return null;
-        }
-        
-        String trangThai = (String) cboTrangThai.getSelectedItem();
-        String moTa = txtMoTa.getText().trim();
-        int maLoai = Integer.parseInt(txtMaLoai.getText().trim());
-        String hinhAnh = hinhAnhPath[0];
-        
-        if (hinhAnh.isEmpty()) {
-            JOptionPane.showMessageDialog(parent, "Vui lòng chọn hình ảnh cho sản phẩm", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return null;
-        }
-        
-        try {
-            LoaiSanPham loaiSanPham = loaiSanPhamDAO.getLoaiSanPhamById(maLoai);
-            if (loaiSanPham == null) {
-                JOptionPane.showMessageDialog(parent, "Mã loại sản phẩm không tồn tại", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return null;
-            }
-            
-            LocalDateTime ngayCapNhat = LocalDateTime.now();
-            return new SanPham(maSanPham, tenSanPham, loaiSanPham, gia, moTa, trangThai, hinhAnh, 
-                              ngayTao == null ? ngayCapNhat : ngayTao, ngayCapNhat);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return null;
-    }
+    /** Dialog thêm/sửa sản phẩm. sp = null → thêm mới. */
+    private void moForm(SanPham sp) {
+        JDialog dialog = new JDialog(SwingUtilitiesWindow(), sp == null ? "Thêm sản phẩm" : "Sửa sản phẩm");
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setSize(420, 480);
+        dialog.setLocationRelativeTo(this);
 
-    private void openAddProductDialog() {
-        JDialog addProductDialog = new JDialog((Frame) null, "Thêm Sản Phẩm", true);
-        addProductDialog.setLayout(new BorderLayout());
-        
-        JTextField txtTenSanPham = new JTextField(20);
-        JTextField txtGia = new JTextField(20);
-        JComboBox<String> cboTrangThai = new JComboBox<>(new String[]{"Đang Bán", "Hết Hàng"});
-        JTextArea txtMoTa = new JTextArea(3, 20);
-        
-        LoaiSanPham loaiDaChon = null;
+        JPanel form = new JPanel(new GridLayout(0, 2, 8, 10));
+        form.setBorder(new EmptyBorder(15, 20, 15, 20));
+
+        JTextField txtMaVach = new JTextField(sp == null ? "" : sp.getMaVach());
+        JTextField txtTen = new JTextField(sp == null ? "" : sp.getTenSanPham());
+        JComboBox<LoaiSanPham> cbLoai = new JComboBox<>();
+        List<LoaiSanPham> dsLoai;
         try {
-            loaiDaChon = loaiSanPhamDAO.getLoaiSanPhamById(currentMaLoai);
+            dsLoai = loaiDAO.getAllLoaiSanPham();
         } catch (Exception ex) {
-            ex.printStackTrace();
+            dsLoai = new java.util.ArrayList<>();
         }
-        
-        JTextField txtMaLoai = new JTextField(String.valueOf(currentMaLoai));
-        JTextField txtTenLoai = new JTextField(loaiDaChon != null ? loaiDaChon.getTenLoai() : "");
-        JLabel lblHinhAnh = new JLabel("Chưa chọn ảnh");
-        lblHinhAnh.setPreferredSize(new Dimension(200, 30));
-        
-        final String[] hinhAnhPath = {""};
-        final JLabel lblPreviewImage = new JLabel();
-        
-        JPanel formPanel = createProductForm(null, txtTenSanPham, txtGia, cboTrangThai, txtMoTa, 
-                                           txtMaLoai, txtTenLoai, hinhAnhPath, lblHinhAnh, 
-                                           lblPreviewImage, false);
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnSave = new JButton("Lưu");
-        JButton btnCancel = new JButton("Hủy");
-        
-        btnCancel.addActionListener(e -> addProductDialog.dispose());
-        
-        btnSave.addActionListener(e -> {
-            try {
-                SanPham sanPham = validateAndCreateProduct(addProductDialog, 0, hinhAnhPath, 
-                                                        txtTenSanPham, txtGia, cboTrangThai, txtMoTa, 
-                                                        txtMaLoai, null);
-                if (sanPham != null) {
-                    try {
-                        sanPhamDAO.addSanPham(sanPham);
-                        loadSanPhamTheoLoai(currentMaLoai);
-                        JOptionPane.showMessageDialog(addProductDialog, "Thêm sản phẩm thành công!", 
-                                                   "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                        addProductDialog.dispose();
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(addProductDialog, "Lỗi: " + ex.getMessage(), 
-                                "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    }
+        for (LoaiSanPham l : dsLoai) cbLoai.addItem(l);
+        if (sp != null && sp.getLoaiSanPham() != null && sp.getLoaiSanPham().getMaLoai() > 0) {
+            cbLoai.setSelectedItem(sp.getLoaiSanPham());
+            for (int i = 0; i < cbLoai.getItemCount(); i++) {
+                if (cbLoai.getItemAt(i).getMaLoai() == sp.getLoaiSanPham().getMaLoai()) {
+                    cbLoai.setSelectedIndex(i);
+                    break;
                 }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(addProductDialog, "Lỗi: " + ex.getMessage(), 
-                                           "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        String[] donVi = {"Cái", "Gói", "Chai", "Hộp", "Lon", "Thùng", "Kg"};
+        JComboBox<String> cbDonVi = new JComboBox<>(donVi);
+        if (sp != null && sp.getDonViTinh() != null) cbDonVi.setSelectedItem(sp.getDonViTinh());
+        JTextField txtGiaBan = new JTextField(sp == null ? "" : sp.getGiaBan().toPlainString());
+        JTextField txtGiaVon = new JTextField(sp == null ? "" :
+                (sp.getGiaVon() == null ? "0" : sp.getGiaVon().toPlainString()));
+        JTextField txtTon = new JTextField(sp == null ? "0" : String.valueOf(sp.getTonKho()));
+        JTextField txtNguong = new JTextField(sp == null ? "5" : String.valueOf(sp.getTonToiThieu()));
+        String[] trangThai = {"DANG_BAN", "NGUNG_BAN"};
+        JComboBox<String> cbTrangThai = new JComboBox<>(trangThai);
+        if (sp != null) cbTrangThai.setSelectedItem(sp.getTrangThai());
+
+        // Nhà cung cấp của sản phẩm
+        JComboBox<NhaCungCap> cbNCC = new JComboBox<>();
+        List<NhaCungCap> dsNCC = nccDAO.getAllNhaCungCap();
+        for (NhaCungCap n : dsNCC) cbNCC.addItem(n);
+        if (sp != null && sp.getMaNhaCungCap() > 0) {
+            for (int i = 0; i < cbNCC.getItemCount(); i++) {
+                if (cbNCC.getItemAt(i).getMaNCC() == sp.getMaNhaCungCap()) {
+                    cbNCC.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+
+        form.add(new JLabel("Mã vạch *"));
+        form.add(txtMaVach);
+        form.add(new JLabel("Tên sản phẩm *"));
+        form.add(txtTen);
+        form.add(new JLabel("Loại"));
+        form.add(cbLoai);
+        form.add(new JLabel("Đơn vị tính"));
+        form.add(cbDonVi);
+        form.add(new JLabel("Giá bán *"));
+        form.add(txtGiaBan);
+        form.add(new JLabel("Giá vốn"));
+        form.add(txtGiaVon);
+        form.add(new JLabel("Tồn kho"));
+        form.add(txtTon);
+        form.add(new JLabel("Ngưỡng cảnh báo"));
+        form.add(txtNguong);
+        form.add(new JLabel("Trạng thái"));
+        form.add(cbTrangThai);
+        form.add(new JLabel("Nhà cung cấp"));
+        form.add(cbNCC);
+
+        JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton btnLuu = new JButton("Lưu");
+        JButton btnHuy = new JButton("Hủy");
+        pnlNut.add(btnHuy);
+        pnlNut.add(btnLuu);
+
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.add(pnlNut, BorderLayout.SOUTH);
+
+        btnHuy.addActionListener(e -> dialog.dispose());
+        btnLuu.addActionListener(e -> {
+            try {
+                String maVach = txtMaVach.getText().trim();
+                String ten = txtTen.getText().trim();
+                if (maVach.isEmpty() || ten.isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, "Mã vạch và tên sản phẩm là bắt buộc.");
+                    return;
+                }
+                BigDecimal giaBan = new BigDecimal(txtGiaBan.getText().trim());
+                BigDecimal giaVon = txtGiaVon.getText().trim().isEmpty() ? BigDecimal.ZERO
+                        : new BigDecimal(txtGiaVon.getText().trim());
+                int nguong = Integer.parseInt(txtNguong.getText().trim());
+                int ton = Integer.parseInt(txtTon.getText().trim());
+
+                SanPham formSP = new SanPham();
+                formSP.setMaSanPham(sp == null ? 0 : sp.getMaSanPham());
+                formSP.setMaVach(maVach);
+                formSP.setTenSanPham(ten);
+                formSP.setLoaiSanPham((LoaiSanPham) cbLoai.getSelectedItem());
+                formSP.setDonViTinh((String) cbDonVi.getSelectedItem());
+                formSP.setGiaBan(giaBan);
+                formSP.setGiaVon(giaVon);
+                formSP.setTonKho(ton);
+                formSP.setTonToiThieu(nguong);
+                formSP.setTrangThai((String) cbTrangThai.getSelectedItem());
+                NhaCungCap nccChon = (NhaCungCap) cbNCC.getSelectedItem();
+                formSP.setMaNhaCungCap(nccChon == null ? 0 : nccChon.getMaNCC());
+
+                boolean ok;
+                if (sp == null) {
+                    ok = sanPhamDAO.them(formSP);
+                } else {
+                    // Không sửa tồn kho qua form (tồn chỉ đổi qua bán/nhập)
+                    formSP.setTonKho(sp.getTonKho());
+                    ok = sanPhamDAO.sua(formSP);
+                }
+                if (ok) {
+                    JOptionPane.showMessageDialog(dialog, "Lưu thành công!");
+                    dialog.dispose();
+                    taiDuLieu();
+                } else {
+                    JOptionPane.showMessageDialog(dialog, "Lưu thất bại (kiểm tra mã vạch đã tồn tại?).",
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Dữ liệu số không hợp lệ: " + ex.getMessage());
             }
         });
-        
-        buttonPanel.add(btnSave);
-        buttonPanel.add(btnCancel);
-        
-        addProductDialog.add(formPanel, BorderLayout.CENTER);
-        addProductDialog.add(buttonPanel, BorderLayout.SOUTH);
-        
-        addProductDialog.pack();
-        addProductDialog.setSize(450, 550);
-        addProductDialog.setLocationRelativeTo(null);
-        addProductDialog.setVisible(true);
+
+        dialog.setVisible(true);
     }
 
-    private void openEditProductDialog() {
-        int selectedRow = tableSanPham.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm để sửa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        int maSanPham = (int) modelSanPham.getValueAt(selectedRow, 0);
-        
-        try {
-            SanPham sanPham = sanPhamDAO.getSanPhamById(maSanPham);
-            
-            if (sanPham == null) {
-                JOptionPane.showMessageDialog(this, "Không tìm thấy thông tin sản phẩm.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            JDialog editProductDialog = new JDialog((Frame) null, "Sửa Sản Phẩm", true);
-            editProductDialog.setLayout(new BorderLayout());
-            
-            JTextField txtTenSanPham = new JTextField(sanPham.getTenSanPham(), 20);
-            JTextField txtGia = new JTextField(sanPham.getGia().toString(), 20);
-            JComboBox<String> cboTrangThai = new JComboBox<>(new String[]{"Đang Bán", "Hết Hàng"});
-            cboTrangThai.setSelectedItem(sanPham.getTrangThai());
-            JTextArea txtMoTa = new JTextArea(sanPham.getMoTa(), 3, 20);
-            
-            JTextField txtMaLoai = new JTextField(String.valueOf(sanPham.getLoaiSanPham().getMaLoai()));
-            JTextField txtTenLoai = new JTextField(sanPham.getLoaiSanPham().getTenLoai());
-            
-            JLabel lblHinhAnh = new JLabel(sanPham.getHinhAnh() != null ? 
-                                       new File(sanPham.getHinhAnh()).getName() : "Không có hình ảnh");
-            lblHinhAnh.setPreferredSize(new Dimension(200, 30));
-            
-            final String[] hinhAnhPath = {sanPham.getHinhAnh()};
-            final JLabel lblPreviewImage = new JLabel();
-            
-            JPanel formPanel = createProductForm(sanPham, txtTenSanPham, txtGia, cboTrangThai, txtMoTa, 
-                                               txtMaLoai, txtTenLoai, hinhAnhPath, lblHinhAnh, 
-                                               lblPreviewImage, true);
-            
-            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-            JButton btnSave = new JButton("Lưu");
-            JButton btnCancel = new JButton("Hủy");
-            
-            btnCancel.addActionListener(e -> editProductDialog.dispose());
-            
-            btnSave.addActionListener(e -> {
-                try {
-                    SanPham sanPhamCapNhat = validateAndCreateProduct(editProductDialog, maSanPham, hinhAnhPath, 
-                                                                 txtTenSanPham, txtGia, cboTrangThai, txtMoTa, 
-                                                                 txtMaLoai, sanPham.getNgayTao());
-                    if (sanPhamCapNhat != null) {
-                        try {
-                            sanPhamDAO.updateSanPham(sanPhamCapNhat);
-                            loadSanPhamTheoLoai(currentMaLoai);
-                            JOptionPane.showMessageDialog(editProductDialog, "Cập nhật sản phẩm thành công!", 
-                                                       "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                            editProductDialog.dispose();
-                        } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(editProductDialog, "Lỗi: " + ex.getMessage(), 
-                                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-                        }
-                    }
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(editProductDialog, "Lỗi: " + ex.getMessage(), 
-                                               "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            });
-            
-            buttonPanel.add(btnSave);
-            buttonPanel.add(btnCancel);
-            
-            editProductDialog.add(formPanel, BorderLayout.CENTER);
-            editProductDialog.add(buttonPanel, BorderLayout.SOUTH);
-            
-            editProductDialog.pack();
-            editProductDialog.setSize(450, 550);
-            editProductDialog.setLocationRelativeTo(null);
-            editProductDialog.setVisible(true);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Lỗi lấy thông tin sản phẩm: " + ex.getMessage(), 
-                                       "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void openDeleteProductDialog() {
-        int selectedRow = tableSanPham.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn sản phẩm để xóa.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        int maSanPham = (int) modelSanPham.getValueAt(selectedRow, 0);
-
-        int option = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa sản phẩm này?", 
-                                               "Xóa sản phẩm", JOptionPane.YES_NO_OPTION);
-        if (option == JOptionPane.YES_OPTION) {
-            try {
-               boolean success = sanPhamDAO.deleteSanPham(maSanPham);
-                
-                if (success) {
-                    loadSanPhamTheoLoai(currentMaLoai);
-                    JOptionPane.showMessageDialog(this, "Xóa sản phẩm thành công!", 
-                                               "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this, "Không thể xóa sản phẩm.", 
-                                               "Lỗi", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Lỗi xóa sản phẩm: " + ex.getMessage(), 
-                                           "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-    
-    private class ImageRenderer extends DefaultTableCellRenderer {
-        @Override
-        public void setValue(Object value) {
-            if (value instanceof ImageIcon) {
-                setIcon((ImageIcon) value);
-                setText("");
-            } else {
-                super.setValue(value);
-            }
-        }
+    private java.awt.Window SwingUtilitiesWindow() {
+        return javax.swing.SwingUtilities.getWindowAncestor(this);
     }
 }

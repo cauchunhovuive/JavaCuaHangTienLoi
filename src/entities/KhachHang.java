@@ -1,147 +1,44 @@
 package entities;
 
-import java.sql.Date;
-import java.sql.Timestamp;
+import java.math.BigDecimal;
 
+/** Khách hàng: khách lẻ (maKhachHang = 0) hoặc thành viên tích điểm. */
 public class KhachHang {
-    private long maKhachHang; 
-    private String ho;
-    private String ten;
-    private String gioiTinh;
-    private String cmnd;
-    private Date ngaySinh;
-    private DiaChi diaChi;
+    private int maKhachHang;
+    private String tenKhachHang;
     private String soDienThoai;
-    private String email;
     private int diemTichLuy;
-    private Timestamp ngayDangKy;
+    private BigDecimal tongChiTieu;
 
-    // Constructor mặc định
     public KhachHang() {
+        this.tenKhachHang = "Khách lẻ";
     }
 
-    // Constructor với tất cả tham số, loại bỏ maKhachHang = 0
-    public KhachHang(long maKhachHang, String ho, String ten, String gioiTinh,
-                     String cmnd, Date ngaySinh, DiaChi diaChi, String soDienThoai,
-                     String email, int diemTichLuy, Timestamp ngayDangKy) {
-        this.maKhachHang = maKhachHang; // Gán mã khách hàng trực tiếp
-        this.ho = ho;
-        this.ten = ten;
-        this.gioiTinh = gioiTinh;
-        this.cmnd = cmnd;
-        this.ngaySinh = ngaySinh;
-        this.diaChi = diaChi;
-        this.soDienThoai = soDienThoai;
-        this.email = email;
-        this.diemTichLuy = diemTichLuy;
-        this.ngayDangKy = ngayDangKy;
-    }
-
-   
-    public KhachHang(String ten) {
-        this.ten = ten;
-        this.ho = "";
-        this.gioiTinh = "Khác";
-        this.cmnd = "";
-        this.ngaySinh = Date.valueOf("2000-01-01");
-        this.diaChi = new DiaChi(1, ten, ten, ten, ten, ten, ten); 
-        this.soDienThoai = "";
-        this.email = "";
-        this.diemTichLuy = 0;
-        this.ngayDangKy = new Timestamp(System.currentTimeMillis());
-    }
-
-    // Getters and Setters
-    public long getMaKhachHang() {
-        return maKhachHang;
-    }
-
-    public void setMaKhachHang(long maKhachHang) {
+    public KhachHang(int maKhachHang, String tenKhachHang, String soDienThoai, int diemTichLuy, BigDecimal tongChiTieu) {
         this.maKhachHang = maKhachHang;
-    }
-
-    public String getHo() {
-        return ho;
-    }
-
-    public void setHo(String ho) {
-        this.ho = ho;
-    }
-
-    public String getTen() {
-        return ten;
-    }
-
-    public void setTen(String ten) {
-        this.ten = ten;
-    }
-
-    public String getGioiTinh() {
-        return gioiTinh;
-    }
-
-    public void setGioiTinh(String gioiTinh) {
-        this.gioiTinh = gioiTinh;
-    }
-
-    public String getCmnd() {
-        return cmnd;
-    }
-
-    public void setCmnd(String cmnd) {
-        this.cmnd = cmnd;
-    }
-
-    public Date getNgaySinh() {
-        return ngaySinh;
-    }
-
-    public void setNgaySinh(Date ngaySinh) {
-        this.ngaySinh = ngaySinh;
-    }
-
-    public DiaChi getDiaChi() {
-        return diaChi;
-    }
-
-    public void setDiaChi(DiaChi diaChi) {
-        this.diaChi = diaChi;
-    }
-
-    public String getSoDienThoai() {
-        return soDienThoai;
-    }
-
-    public void setSoDienThoai(String soDienThoai) {
+        this.tenKhachHang = tenKhachHang;
         this.soDienThoai = soDienThoai;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public int getDiemTichLuy() {
-        return diemTichLuy;
-    }
-
-    public void setDiemTichLuy(int diemTichLuy) {
         this.diemTichLuy = diemTichLuy;
+        this.tongChiTieu = tongChiTieu;
     }
 
-    public Timestamp getNgayDangKy() {
-        return ngayDangKy;
-    }
+    public int getMaKhachHang() { return maKhachHang; }
+    public void setMaKhachHang(int maKhachHang) { this.maKhachHang = maKhachHang; }
 
-    public void setNgayDangKy(Timestamp ngayDangKy) {
-        this.ngayDangKy = ngayDangKy;
-    }
+    public String getTenKhachHang() { return tenKhachHang; }
+    public void setTenKhachHang(String tenKhachHang) { this.tenKhachHang = tenKhachHang; }
+
+    public String getSoDienThoai() { return soDienThoai; }
+    public void setSoDienThoai(String soDienThoai) { this.soDienThoai = soDienThoai; }
+
+    public int getDiemTichLuy() { return diemTichLuy; }
+    public void setDiemTichLuy(int diemTichLuy) { this.diemTichLuy = diemTichLuy; }
+
+    public BigDecimal getTongChiTieu() { return tongChiTieu; }
+    public void setTongChiTieu(BigDecimal tongChiTieu) { this.tongChiTieu = tongChiTieu; }
 
     @Override
     public String toString() {
-        return ho + " " + ten;
+        return tenKhachHang + (soDienThoai == null || soDienThoai.isEmpty() ? "" : " - " + soDienThoai);
     }
 }

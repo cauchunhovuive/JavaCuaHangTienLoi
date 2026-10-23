@@ -9,7 +9,7 @@ public class DatabaseConnection {
     private Connection connection;
 
    
-    private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=CafeFinally;encrypt=true;trustServerCertificate=true";
+    private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=QuanLyCuaHangTienLoi;encrypt=true;trustServerCertificate=true";
     private static final String USER = "sa";
     private static final String PASSWORD = "123456";
 
@@ -31,14 +31,17 @@ public class DatabaseConnection {
     }
 
   
+    /**
+     * Trả về connection MỚI mỗi lần gọi — các DAO đều đóng connection bằng
+     * try-with-resources, nếu dùng chung 1 connection (singleton) thì lần gọi
+     * sau sẽ đóng connection đang chạy transaction → lỗi "connection closed".
+     */
     public Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            try {
-                connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            } catch (SQLException e) {
-                System.err.println("Error connecting to database: " + e.getMessage());
-                throw e;
-            }
+        try {
+            connection = DriverManager.getConnection(URL, USER, PASSWORD);
+        } catch (SQLException e) {
+            System.err.println("Error connecting to database: " + e.getMessage());
+            throw e;
         }
         return connection;
     }
