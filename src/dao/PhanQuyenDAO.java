@@ -1,5 +1,5 @@
 package dao;
-//Người làm phạm thanh huy
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,7 +8,7 @@ import java.util.ArrayList;
 
 import javax.swing.JOptionPane;
 
-import ConnectDB.DatabaseConnection;
+import connectDB.DatabaseConnection;
 import entities.PhanQuyen;
 
 public class PhanQuyenDAO {
@@ -45,7 +45,6 @@ public class PhanQuyenDAO {
             try {
                 if(rs != null) rs.close();
                 if(stmt != null) stmt.close();
-                // Không đóng connection vì instance được quản lý bởi DatabaseConnection
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -78,7 +77,6 @@ public class PhanQuyenDAO {
                 System.out.println("Đã tìm thấy quyền: " + pq.getMaQuyen() + " - " + pq.getTenQuyen());
             } else {
                 System.out.println("Không tìm thấy quyền với mã: " + maQuyen);
-                // Trả về quyền mặc định nếu không tìm thấy
                 pq = new PhanQuyen(0, "Không xác định");
             }
         } catch (SQLException e) {
@@ -89,7 +87,6 @@ public class PhanQuyenDAO {
             try {
                 if(rs != null) rs.close();
                 if(stmt != null) stmt.close();
-                // Không đóng connection vì instance được quản lý bởi DatabaseConnection
             } catch (SQLException e) {
                 e.printStackTrace();
             }

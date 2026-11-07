@@ -11,7 +11,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
-import ConnectDB.DatabaseConnection;
+import connectDB.DatabaseConnection;
 import entities.ChiTietNhapHang;
 import entities.NhaCungCap;
 import entities.NhanVien;

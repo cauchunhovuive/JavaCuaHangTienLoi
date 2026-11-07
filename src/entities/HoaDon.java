@@ -1,7 +1,9 @@
 package entities;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /** Hóa đơn bán hàng tại quầy (POS). */
 public class HoaDon {
@@ -9,24 +11,25 @@ public class HoaDon {
     private Date ngayLap;
     private NhanVien nhanVien;
     private KhachHang khachHang;
-    private BigDecimal tongTien;
     private BigDecimal tienKhachDua;
     private BigDecimal tienThua;
     private int diemDuocTang;
     private String trangThai;       // HOAN_TAT, DA_HUY
     private String hinhThucThanhToan; // TIEN_MAT, CHUYEN_KHOAN
 
+    /** Các dòng chi tiết — nguồn dữ liệu để suy ra tongTien. */
+    private List<ChiTietHoaDon> chiTiet = new ArrayList<>();
+
     public HoaDon() {
     }
 
     public HoaDon(int maHoaDon, Date ngayLap, NhanVien nhanVien, KhachHang khachHang,
-                  BigDecimal tongTien, BigDecimal tienKhachDua, BigDecimal tienThua,
+                  BigDecimal tienKhachDua, BigDecimal tienThua,
                   int diemDuocTang, String trangThai) {
         this.maHoaDon = maHoaDon;
         this.ngayLap = ngayLap;
         this.nhanVien = nhanVien;
         this.khachHang = khachHang;
-        this.tongTien = tongTien;
         this.tienKhachDua = tienKhachDua;
         this.tienThua = tienThua;
         this.diemDuocTang = diemDuocTang;
@@ -45,8 +48,21 @@ public class HoaDon {
     public KhachHang getKhachHang() { return khachHang; }
     public void setKhachHang(KhachHang khachHang) { this.khachHang = khachHang; }
 
-    public BigDecimal getTongTien() { return tongTien; }
-    public void setTongTien(BigDecimal tongTien) { this.tongTien = tongTien; }
+    /** Thuộc tính dẫn xuất: tổng thành tiền của các dòng chi tiết (không lưu trữ). */
+    public BigDecimal getTongTien() {
+        BigDecimal tong = BigDecimal.ZERO;
+        for (ChiTietHoaDon ct : chiTiet) {
+            if (ct != null && ct.getDonGia() != null) {
+                tong = tong.add(ct.getThanhTien());
+            }
+        }
+        return tong;
+    }
+
+    public List<ChiTietHoaDon> getChiTiet() { return chiTiet; }
+    public void setChiTiet(List<ChiTietHoaDon> chiTiet) {
+        this.chiTiet = chiTiet == null ? new ArrayList<>() : chiTiet;
+    }
 
     public BigDecimal getTienKhachDua() { return tienKhachDua; }
     public void setTienKhachDua(BigDecimal tienKhachDua) { this.tienKhachDua = tienKhachDua; }

@@ -5,7 +5,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import ConnectDB.DatabaseConnection;
+import connectDB.DatabaseConnection;
 
 public class LoaiSanPhamDAO {
     public LoaiSanPhamDAO() {

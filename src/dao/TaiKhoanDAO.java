@@ -1,5 +1,5 @@
 package dao;
-//Người làm phạm thanh huy
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,7 +9,7 @@ import java.util.List;
 
 import javax.swing.JOptionPane;
 
-import ConnectDB.DatabaseConnection;
+import connectDB.DatabaseConnection;
 import entities.PhanQuyen;
 import entities.TaiKhoan;
 
@@ -17,7 +17,7 @@ public class TaiKhoanDAO {
     private PhanQuyenDAO phanQuyen = new PhanQuyenDAO();
 
     public ArrayList<TaiKhoan> dsTaiKhoan() {
-        String sql = "SELECT TenTaiKhoan, MatKhau, MaQuyen FROM TaiKhoan";
+        String sql = "SELECT TenTaiKhoan, MatKhau, Email, MaQuyen, NgayTao, TrangThai FROM TaiKhoan";
         ArrayList<TaiKhoan> dsTk = new ArrayList<>();
         Connection conn = null;
         PreparedStatement stmt = null;
@@ -38,8 +38,11 @@ public class TaiKhoanDAO {
                 int maQuyen = rs.getInt("MaQuyen");
                 
                 TaiKhoan tk = new TaiKhoan();
-                tk.setTenDangNhap(tenTK);
+                tk.setTenTaiKhoan(tenTK);
                 tk.setMatKhau(matKhau);
+                tk.setEmail(rs.getString("Email"));
+                tk.setNgayTao(rs.getTimestamp("NgayTao"));
+                tk.setTrangThai(rs.getString("TrangThai"));
                 
                 PhanQuyen pq = phanQuyen.getPhanQuyen(maQuyen);
                 tk.setQuyen(pq);

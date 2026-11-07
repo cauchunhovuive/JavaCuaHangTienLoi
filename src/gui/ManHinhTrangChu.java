@@ -32,10 +32,7 @@ import dao.HoaDonDAO;
 import dao.SanPhamDAO;
 import entities.SanPham;
 
-/**
- * Trang chủ: 4 thẻ thống kê + lưới sản phẩm có hình ảnh (giống bản cũ)
- * + thanh lối tắt. Có ô tìm lọc nhanh trên lưới.
- */
+
 public class ManHinhTrangChu extends JPanel {
     private static final long serialVersionUID = 1L;
 
@@ -83,7 +80,6 @@ public class ManHinhTrangChu extends JPanel {
         pnlTim.add(txtTim);
         pnlTren.add(pnlTim, BorderLayout.EAST);
 
-        // ===== 4 the thong ke =====
         JPanel pnlThe = new JPanel(new GridLayout(1, 4, 15, 0));
         pnlThe.setOpaque(false);
         pnlThe.setPreferredSize(new Dimension(0, 90));
@@ -92,14 +88,12 @@ public class ManHinhTrangChu extends JPanel {
         lblSapHet = taoThe(pnlThe, "Sản phẩm sắp hết");
         lblSoSanPham = taoThe(pnlThe, "Sản phẩm đang bán");
 
-        // ===== Luoi san pham co anh (bam la them vao giỏ) =====
         pnlLuoi = new JPanel(new GridLayout(0, 3, 12, 12));
         pnlLuoi.setBackground(new Color(245, 246, 247));
         JScrollPane scrLuoi = new JScrollPane(pnlLuoi);
         scrLuoi.setBorder(BorderFactory.createTitledBorder("Sản phẩm — bấm vào thẻ để thêm vào giỏ hàng bên phải"));
         scrLuoi.getVerticalScrollBar().setUnitIncrement(16);
 
-        // Giỏ hàng + thanh toán (màn bán hàng) gộp thẳng vào trang chủ
         JScrollPane scrBanHang = new JScrollPane(banHang);
         scrBanHang.setBorder(BorderFactory.createTitledBorder("Giỏ hàng / Thanh toán"));
         scrBanHang.setPreferredSize(new Dimension(480, 0));
@@ -108,7 +102,6 @@ public class ManHinhTrangChu extends JPanel {
         split.setResizeWeight(0.62);
         split.setBorder(null);
 
-        // ===== Thanh loi toat =====
         JPanel pnlLoiToat = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 4));
         pnlLoiToat.setOpaque(false);
         pnlLoiToat.add(taoNutLoiToat("Quản lý sản phẩm", HeThongQuanLyCuaHangTienLoi.CARD_SAN_PHAM));
@@ -130,8 +123,8 @@ public class ManHinhTrangChu extends JPanel {
         JPanel the = new JPanel(new BorderLayout());
         the.setBackground(new Color(245, 248, 245));
         the.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 230, 220)),
-                new EmptyBorder(12, 10, 12, 10)));
+        BorderFactory.createLineBorder(new Color(220, 230, 220)),
+        new EmptyBorder(12, 10, 12, 10)));
         JLabel giaTri = new JLabel("—", JLabel.CENTER);
         giaTri.setFont(new Font("SansSerif", Font.BOLD, 20));
         giaTri.setForeground(new Color(0, 102, 51));
@@ -156,7 +149,6 @@ public class ManHinhTrangChu extends JPanel {
         return nut;
     }
 
-    /** Nạp dữ liệu (gọi mỗi khi vào màn). */
     public void taiDuLieu() {
         banHang.taiDuLieu();
         LocalDate homNay = LocalDate.now();
@@ -179,7 +171,6 @@ public class ManHinhTrangChu extends JPanel {
         veLuoi();
     }
 
-    /** Vẽ lưới thẻ sản phẩm (lọc theo ô tìm). */
     private void veLuoi() {
         pnlLuoi.removeAll();
         String tuKhoa = txtTim.getText().trim().toLowerCase();
@@ -212,19 +203,16 @@ public class ManHinhTrangChu extends JPanel {
         the.setPreferredSize(new Dimension(170, 220));
         the.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
-        // Anh san pham (thieu anh -> image-notfound.png)
         JLabel lblAnh = new JLabel("", SwingConstants.CENTER);
         lblAnh.setPreferredSize(new Dimension(150, 110));
         lblAnh.setIcon(tayAnh(sp.getHinhAnh(), 150, 110));
         the.add(lblAnh, BorderLayout.NORTH);
 
-        // Ten san pham (2 dong)
         JLabel lblTen = new JLabel("<html><div style='text-align:center'>" + sp.getTenSanPham() + "</div></html>");
         lblTen.setFont(new Font("SansSerif", Font.BOLD, 12));
         lblTen.setHorizontalAlignment(SwingConstants.CENTER);
         the.add(lblTen, BorderLayout.CENTER);
 
-        // Gia + ton kho
         JPanel pnlDuoi = new JPanel(new BorderLayout());
         pnlDuoi.setOpaque(false);
         JLabel lblGia = new JLabel(String.format("%,.0f đ", sp.getGiaBan()), SwingConstants.CENTER);
@@ -240,9 +228,8 @@ public class ManHinhTrangChu extends JPanel {
         pnlDuoi.add(lblTon, BorderLayout.SOUTH);
         the.add(pnlDuoi, BorderLayout.SOUTH);
 
-        // Bam vao the -> them thang vao gio hang
         the.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
+        	@Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 banHang.themSanPhamVaoGio(sp);
             }
@@ -250,7 +237,6 @@ public class ManHinhTrangChu extends JPanel {
         return the;
     }
 
-    /** Tai anh theo duong dan, keo co, thieu file thi dung anh mac dinh. */
     private ImageIcon tayAnh(String duongDan, int rong, int cao) {
         String duong = duongDan;
         if (duong == null || duong.trim().isEmpty() || !new File(duong).exists()) {

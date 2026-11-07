@@ -28,7 +28,7 @@ public class Login extends JFrame {
 
     public Login() {
         initComponents();
-        setLocationRelativeTo(null); // Đặt cửa sổ ở giữa màn hình
+        setLocationRelativeTo(null);
     }
 
     private void initComponents() {
@@ -64,7 +64,6 @@ public class Login extends JFrame {
         panel.setLayout(new BorderLayout());
         panel.setBackground(new Color(0, 102, 51));
 
-        // Tim o ca 2 cho: src/images/ va src/images/sp/ (anh ban vua bo vao sp/)
         logoIcon = tayAnh("/images/background-store.jpg", "src/images/background-store.jpg");
         if (logoIcon == null) logoIcon = tayAnh(null, "src/images/sp/background-store.jpg");
         if (logoIcon == null) logoIcon = tayAnh(null, "src/images/background-cafe.png");
@@ -232,7 +231,7 @@ public class Login extends JFrame {
         ArrayList<TaiKhoan> dsTk = taiKhoanDAO.dsTaiKhoan();
         TaiKhoan tkDung = null;
         for (TaiKhoan x : dsTk) {
-            if (x.getTenDangNhap().equalsIgnoreCase(username) && password.equals(x.getMatKhau())) {
+            if (x.getTenTaiKhoan().equalsIgnoreCase(username) && password.equals(x.getMatKhau())) {
                 tkDung = x;
                 break;
             }
@@ -253,7 +252,7 @@ public class Login extends JFrame {
         }
 
         tk = tkDung;
-        NhanVien nhanVien = new NhanVienDAO().getNhanVienByTaiKhoan(tk.getTenDangNhap());
+        NhanVien nhanVien = new NhanVienDAO().getNhanVienByTaiKhoan(tk.getTenTaiKhoan());
 
         JOptionPane.showMessageDialog(this, "Đăng nhập thành công!");
         SwingUtilities.invokeLater(() -> {

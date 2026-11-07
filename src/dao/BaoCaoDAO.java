@@ -9,20 +9,19 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import ConnectDB.DatabaseConnection;
+import connectDB.DatabaseConnection;
 import entities.HoaDon;
 
-/** DAO báo cáo: doanh thu, lợi nhuận, top sản phẩm bán chạy. */
 public class BaoCaoDAO {
 
-    /** Doanh thu từng ngày trong khoảng (ngày không có giao dịch vẫn trả về 0 qua map ở GUI). */
     public List<Object[]> doanhThuTheoNgay(int nam, int thang) {
         List<Object[]> list = new ArrayList<>();
         String sql =
-            "SELECT CAST(NgayLap AS DATE) AS Ngay, " +
-            "COUNT(DISTINCT MaHD) AS SoHD, ISNULL(SUM(TongTien), 0) AS DoanhThu " +
-            "FROM HoaDon WHERE TrangThai = 'HOAN_TAT' AND YEAR(NgayLap) = ? AND MONTH(NgayLap) = ? " +
-            "GROUP BY CAST(NgayLap AS DATE) ORDER BY Ngay";
+            "SELECT CAST(hd.NgayLap AS DATE) AS Ngay, " +
+            "COUNT(DISTINCT hd.MaHD) AS SoHD, ISNULL(SUM(ct.SoLuong * ct.DonGia), 0) AS DoanhThu " +
+            "FROM HoaDon hd LEFT JOIN ChiTietHoaDon ct ON ct.MaHD = hd.MaHD " +
+            "WHERE hd.TrangThai = 'HOAN_TAT' AND YEAR(hd.NgayLap) = ? AND MONTH(hd.NgayLap) = ? " +
+            "GROUP BY CAST(hd.NgayLap AS DATE) ORDER BY Ngay";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, nam);
@@ -38,13 +37,14 @@ public class BaoCaoDAO {
         return list;
     }
 
-    /** Doanh thu từng tháng trong năm. */
     public List<Object[]> doanhThuTheoThang(int nam) {
         List<Object[]> list = new ArrayList<>();
         String sql =
-            "SELECT MONTH(NgayLap) AS Thang, COUNT(DISTINCT MaHD) AS SoHD, ISNULL(SUM(TongTien), 0) AS DoanhThu " +
-            "FROM HoaDon WHERE TrangThai = 'HOAN_TAT' AND YEAR(NgayLap) = ? " +
-            "GROUP BY MONTH(NgayLap) ORDER BY Thang";
+            "SELECT MONTH(hd.NgayLap) AS Thang, COUNT(DISTINCT hd.MaHD) AS SoHD, " +
+            "ISNULL(SUM(ct.SoLuong * ct.DonGia), 0) AS DoanhThu " +
+            "FROM HoaDon hd LEFT JOIN ChiTietHoaDon ct ON ct.MaHD = hd.MaHD " +
+            "WHERE hd.TrangThai = 'HOAN_TAT' AND YEAR(hd.NgayLap) = ? " +
+            "GROUP BY MONTH(hd.NgayLap) ORDER BY Thang";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, nam);
@@ -59,7 +59,6 @@ public class BaoCaoDAO {
         return list;
     }
 
-    /** Top sản phẩm bán chạy trong khoảng ngày: [tenSP, soLuong, doanhThu]. */
     public List<Object[]> topSanPham(Date tuNgay, Date denNgay, int limit) {
         List<Object[]> list = new ArrayList<>();
         String sql =
@@ -85,10 +84,6 @@ public class BaoCaoDAO {
         return list;
     }
 
-    /**
-     * Lợi nhuận gộp trong khoảng ngày = doanh thu - giá vốn tại thời điểm bán
-     * (giá vốn lấy từ DonGia - (DonGia/Von) ... simplified: dùng GiaVon hiện tại qua join).
-     */
     public BigDecimal loiNhuan(Date tuNgay, Date denNgay) {
         String sql =
             "SELECT ISNULL(SUM(ct.SoLuong * (ct.DonGia - ISNULL(sp.GiaVon, 0))), 0) " +

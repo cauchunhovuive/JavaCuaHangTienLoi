@@ -1,5 +1,4 @@
-package ConnectDB;
-//Người làm Phạm Thanh Huy
+package connectDB;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -30,12 +29,6 @@ public class DatabaseConnection {
         return instance;
     }
 
-  
-    /**
-     * Trả về connection MỚI mỗi lần gọi — các DAO đều đóng connection bằng
-     * try-with-resources, nếu dùng chung 1 connection (singleton) thì lần gọi
-     * sau sẽ đóng connection đang chạy transaction → lỗi "connection closed".
-     */
     public Connection getConnection() throws SQLException {
         try {
             connection = DriverManager.getConnection(URL, USER, PASSWORD);

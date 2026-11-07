@@ -70,7 +70,7 @@ public class HeThongQuanLyCuaHangTienLoi extends JFrame {
         frmNhanVien nhanVienForm = new frmNhanVien();
         frmNhaCungCap nhaCungCapForm = new frmNhaCungCap();
         ThongTinCaNhan caNhan = new ThongTinCaNhan(
-                nhanVien != null ? nhanVien : new NhanVienDAO().getNhanVienByTaiKhoan(tk.getTenDangNhap()));
+        nhanVien != null ? nhanVien : new NhanVienDAO().getNhanVienByTaiKhoan(tk.getTenTaiKhoan()));
 
         panelNoiDung.add(trangChu, CARD_TRANG_CHU);
         panelNoiDung.add(sanPham, CARD_SAN_PHAM);
@@ -81,7 +81,6 @@ public class HeThongQuanLyCuaHangTienLoi extends JFrame {
         panelNoiDung.add(nhaCungCapForm, CARD_NHA_CUNG_CAP);
         panelNoiDung.add(caNhan, CARD_CA_NHAN);
 
-        // Hành động trước khi chuyển màn (vd: nạp lại dữ liệu)
         truocChuyenMan.put(CARD_TRANG_CHU, trangChu::taiDuLieu);
         truocChuyenMan.put(CARD_SAN_PHAM, sanPham::taiDuLieu);
         truocChuyenMan.put(CARD_HOA_DON, hoaDon::taiDuLieu);
@@ -120,7 +119,6 @@ public class HeThongQuanLyCuaHangTienLoi extends JFrame {
         setVisible(true);
     }
 
-    /** Chuyển màn hình + chạy hành động nạp dữ liệu trước. */
     public void hienThiMan(String card) {
         Runnable truoc = truocChuyenMan.get(card);
         if (truoc != null) {

@@ -79,6 +79,6 @@ public class SanPham {
 
     @Override
     public String toString() {
-        return tenSanPham + " [" + maVach + "] - " + giaBan + "đ";
+        return tenSanPham + " [" + maVach + "]";
     }
 }

@@ -51,14 +51,9 @@ public class LoaiSanPham {
         this.icon = icon; // Đã thêm dòng này để gán giá trị
     }
 
-    // Phương thức toString() để tiện cho debug và hiển thị
+    // Hiển thị tên loại trong JComboBox (thay vì dump thuộc tính)
     @Override
     public String toString() {
-        return "LoaiSanPham{" +
-                "maLoai=" + maLoai +
-                ", tenLoai='" + tenLoai + '\'' +
-                ", moTa='" + moTa + '\'' +
-                ", icon='" + icon + '\'' +
-                '}';
+        return tenLoai == null ? "" : tenLoai;
     }
 }

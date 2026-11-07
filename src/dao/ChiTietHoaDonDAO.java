@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import ConnectDB.DatabaseConnection;
+import connectDB.DatabaseConnection;
 import entities.ChiTietHoaDon;
 import entities.HoaDon;
 import entities.SanPham;

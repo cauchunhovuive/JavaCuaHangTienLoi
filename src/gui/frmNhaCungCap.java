@@ -114,8 +114,9 @@ public class frmNhaCungCap extends JPanel {
                         found.getTenNCC(),
                         found.getSoDienThoai(),
                         found.getEmail(),
+                        found.getMaDiaChi(),
                         found.getTrangThai(),
-                        found.getNgayTao()
+                        dinhDangNgay(found.getNgayTao())
                     });
                 } else {
                     JOptionPane.showMessageDialog(this, 
@@ -191,7 +192,7 @@ public class frmNhaCungCap extends JPanel {
         cbTrangThai.setSelectedItem(ncc.getTrangThai());
 
         JLabel lblNgayTao = new JLabel("Ngày Tạo:");
-        JTextField txtNgayTao = new JTextField(ncc.getNgayTao().toString());
+        JTextField txtNgayTao = new JTextField(dinhDangNgay(ncc.getNgayTao()));
         txtNgayTao.setEditable(false);
         txtNgayTao.setBackground(Color.LIGHT_GRAY);
 
@@ -377,7 +378,7 @@ public class frmNhaCungCap extends JPanel {
             		ncc.getSoDienThoai(),
             		ncc.getEmail(),
             		ncc.getTrangThai(),
-            		ncc.getNgayTao()
+            		dinhDangNgay(ncc.getNgayTao())
             })
             .toArray(Object[][]::new);
 
@@ -400,7 +401,7 @@ public class frmNhaCungCap extends JPanel {
 	            ncc.getEmail(),
 	            ncc.getMaDiaChi(),
 	            ncc.getTrangThai(),
-	            ncc.getNgayTao()
+	            dinhDangNgay(ncc.getNgayTao())
 	        })
 	        .toArray(Object[][]::new);
 	    
@@ -408,6 +409,11 @@ public class frmNhaCungCap extends JPanel {
 	}
 
     
+    /** Hiển thị ngày tạo dạng dd/MM/yyyy thay vì Timestamp.toString(). */
+    private String dinhDangNgay(Timestamp t) {
+        return t == null ? "" : new java.text.SimpleDateFormat("dd/MM/yyyy").format(t);
+    }
+
     private void styleButton(JButton button, Color color) {
         button.setFont(new Font("Arial", Font.BOLD, 14));
         button.setBackground(color);

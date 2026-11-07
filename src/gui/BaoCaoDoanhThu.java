@@ -210,7 +210,6 @@ public class BaoCaoDoanhThu extends JPanel {
         lblSoHoaDon.setText(String.valueOf(soHD));
     }
 
-    /** Biểu đồ cột đơn giản vẽ tay. */
     private class BieuDoPanel extends JPanel {
         private static final long serialVersionUID = 1L;
 

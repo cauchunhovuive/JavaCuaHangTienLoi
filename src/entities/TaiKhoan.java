@@ -1,54 +1,68 @@
 package entities;
-//Người làm phạm thanh huy 
+
+import java.util.Date;
+
 public class TaiKhoan {
-	private String tenDangNhap ; 
-	private String matKhau ;
-	private PhanQuyen quyen ;
-	
-	
+	private String tenTaiKhoan;
+	private String matKhau;
+	private String email;
+	private PhanQuyen quyen;   
+	private Date ngayTao;
+	private String trangThai;  
 	public TaiKhoan() {
-		super();
 	}
-	
-	public TaiKhoan(String tenDangNhap, String matKhau, PhanQuyen quyen) {
-		super();
-		this.tenDangNhap = tenDangNhap;
+
+	public TaiKhoan(String tenTaiKhoan, String matKhau, PhanQuyen quyen) {
+		this.tenTaiKhoan = tenTaiKhoan;
 		this.matKhau = matKhau;
 		this.quyen = quyen;
 	}
 
-
-	public PhanQuyen getQuyen() {
-		return quyen;
+	public String getTenTaiKhoan() {
+		return tenTaiKhoan;
 	}
 
-
-	public void setQuyen(PhanQuyen quyen) {
-		this.quyen = quyen;
+	public void setTenTaiKhoan(String tenTaiKhoan) {
+		this.tenTaiKhoan = tenTaiKhoan;
 	}
-
-	public String getTenDangNhap() {
-		return tenDangNhap;
-	}
-
-
-
-	public void setTenDangNhap(String tenDangNhap) {
-		this.tenDangNhap = tenDangNhap;
-	}
-
-
 
 	public String getMatKhau() {
 		return matKhau;
 	}
 
-
-
 	public void setMatKhau(String matKhau) {
 		this.matKhau = matKhau;
 	}
-	
-	
-	
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public PhanQuyen getQuyen() {
+		return quyen;
+	}
+
+	public void setQuyen(PhanQuyen quyen) {
+		this.quyen = quyen;
+	}
+
+	public Date getNgayTao() {
+		return ngayTao;
+	}
+
+	public void setNgayTao(Date ngayTao) {
+		this.ngayTao = ngayTao;
+	}
+
+	public String getTrangThai() {
+		return trangThai;
+	}
+
+	public void setTrangThai(String trangThai) {
+		this.trangThai = trangThai;
+	}
 }

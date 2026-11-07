@@ -127,7 +127,7 @@ CREATE TABLE HoaDon (
     NgayLap     DATETIME NOT NULL DEFAULT GETDATE(),
     MaNV        INT REFERENCES NhanVien(MaNV),
     MaKH        INT REFERENCES KhachHang(MaKH),
-    TongTien    DECIMAL(15,2) NOT NULL,
+    -- TongTien là thuộc tính dẫn xuất: = SUM(ChiTietHoaDon.SoLuong * DonGia), không lưu trữ
     TienKhachDua DECIMAL(15,2),
     TienThua    DECIMAL(15,2),
     DiemTang    INT DEFAULT 0,
@@ -149,6 +149,20 @@ BEGIN
     IF COL_LENGTH('HoaDon', 'TienThua') IS NULL ALTER TABLE HoaDon ADD TienThua DECIMAL(15,2);
     IF COL_LENGTH('HoaDon', 'DiemTang') IS NULL ALTER TABLE HoaDon ADD DiemTang INT DEFAULT 0;
     IF COL_LENGTH('HoaDon', 'TrangThai') IS NULL ALTER TABLE HoaDon ADD TrangThai NVARCHAR(20) DEFAULT N'HOAN_TAT';
+END
+GO
+
+-- TongTien là thuộc tính dẫn xuất nên không còn cột lưu trữ.
+-- Với DB tạo từ phiên bản trước: bỏ cột TongTien (dữ liệu vẫn tính lại được từ ChiTietHoaDon).
+IF OBJECT_ID('HoaDon') IS NOT NULL AND COL_LENGTH('HoaDon', 'TongTien') IS NOT NULL
+BEGIN
+    DECLARE @dfTongTien NVARCHAR(200);
+    SELECT @dfTongTien = dc.name
+      FROM sys.default_constraints dc
+      JOIN sys.columns c ON c.default_object_id = dc.object_id
+     WHERE dc.parent_object_id = OBJECT_ID('HoaDon') AND c.name = 'TongTien';
+    IF @dfTongTien IS NOT NULL EXEC('ALTER TABLE HoaDon DROP CONSTRAINT ' + @dfTongTien);
+    ALTER TABLE HoaDon DROP COLUMN TongTien;
 END
 GO
 

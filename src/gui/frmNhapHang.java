@@ -275,7 +275,8 @@ public class frmNhapHang extends JPanel {
         }
         BigDecimal thanhTien = giaNhap.multiply(BigDecimal.valueOf(sl));
         chiTiet.add(new Object[]{ sp.getTenSanPham(), sp.getDonViTinh(), sl, giaNhap, thanhTien, sp.getMaSanPham() });
-        modelChiTiet.addRow(new Object[]{ sp.getTenSanPham(), sp.getDonViTinh(), sl, giaNhap, thanhTien, sp.getMaSanPham() });
+        modelChiTiet.addRow(new Object[]{ sp.getTenSanPham(), sp.getDonViTinh(), sl,
+                String.format("%,.0f", giaNhap), String.format("%,.0f", thanhTien), sp.getMaSanPham() });
         tongCong();
         txtSoLuong.setText("");
         txtDonGia.setText("");
@@ -285,7 +286,7 @@ public class frmNhapHang extends JPanel {
         Object[] d = chiTiet.get(row);
         BigDecimal thanhTien = ((BigDecimal) d[3]).multiply(BigDecimal.valueOf((int) d[2]));
         d[4] = thanhTien;
-        modelChiTiet.setValueAt(thanhTien, row, 4);
+        modelChiTiet.setValueAt(String.format("%,.0f", thanhTien), row, 4);
     }
 
     private BigDecimal tongTien() {

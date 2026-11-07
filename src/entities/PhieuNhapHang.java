@@ -3,7 +3,6 @@ package entities;
 import java.math.BigDecimal;
 import java.util.Date;
 
-/** Phiếu nhập hàng từ nhà cung cấp. */
 public class PhieuNhapHang {
     private int maPhieuNhap;
     private Date ngayNhap;

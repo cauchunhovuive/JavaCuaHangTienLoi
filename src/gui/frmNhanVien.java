@@ -105,7 +105,7 @@ public class frmNhanVien extends JPanel {
                 nv.getLoaiNV(),
                 nv.getTrangThai(),
                 nv.getNgayVaoLam(),
-                nv.getLuongCoBan()
+                nv.getLuongCoBan() == null ? "" : String.format("%,.0f", nv.getLuongCoBan())
             })
             .toArray(Object[][]::new);
 
@@ -270,7 +270,7 @@ public class frmNhanVien extends JPanel {
         cmbTrangThai.setSelectedItem(nv.getTrangThai()); // Set giá trị hiện tại
         
         JTextField txtNgayVaoLam = new JTextField(nv.getNgayVaoLam().toString());
-        JTextField txtLuongCoBan = new JTextField(nv.getLuongCoBan().toString());
+        JTextField txtLuongCoBan = new JTextField(nv.getLuongCoBan() == null ? "" : nv.getLuongCoBan().toPlainString());
         
         // Thêm các trường vào form
         panelForm.add(new JLabel("Mã NV:"));
@@ -397,7 +397,7 @@ public class frmNhanVien extends JPanel {
                 nv.getLoaiNV(),
                 nv.getTrangThai(),
                 nv.getNgayVaoLam(),
-                nv.getLuongCoBan()
+                nv.getLuongCoBan() == null ? "" : String.format("%,.0f", nv.getLuongCoBan())
             })
             .toArray(Object[][]::new);
         
@@ -446,7 +446,7 @@ public class frmNhanVien extends JPanel {
                         nv.getLoaiNV(),
                         nv.getTrangThai(),
                         nv.getNgayVaoLam(),
-                        nv.getLuongCoBan()
+                        nv.getLuongCoBan() == null ? "" : String.format("%,.0f", nv.getLuongCoBan())
                     }
                 };
                 

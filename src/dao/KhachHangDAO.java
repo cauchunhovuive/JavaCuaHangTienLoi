@@ -8,10 +8,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import ConnectDB.DatabaseConnection;
+import connectDB.DatabaseConnection;
 import entities.KhachHang;
 
-/** DAO cho khách hàng thành viên (khách lẻ không cần lưu). */
 public class KhachHangDAO {
 
     private KhachHang map(ResultSet rs) throws SQLException {
@@ -64,7 +63,6 @@ public class KhachHangDAO {
         }
     }
 
-    /** Cộng điểm + tổng chi tiêu khi khách thành viên mua hàng (trong transaction bán hàng). */
     public void congDiem(Connection conn, int maKH, int diem, BigDecimal thanhTien) throws SQLException {
         String sql = "UPDATE KhachHang SET DiemTichLuy = DiemTichLuy + ?, TongChiTieu = TongChiTieu + ? WHERE MaKH = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {

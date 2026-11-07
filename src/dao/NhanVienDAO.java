@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
+
+import connectDB.DatabaseConnection;
+
 import java.math.BigDecimal;
 
-import ConnectDB.DatabaseConnection;
 import entities.NhanVien;
 
 public class NhanVienDAO {
@@ -94,7 +96,7 @@ public class NhanVienDAO {
                                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-            conn.setAutoCommit(false); // Bắt đầu transaction
+            conn.setAutoCommit(false);
 
             // 1. Thêm tài khoản
             try (PreparedStatement stmtTK = conn.prepareStatement(insertTaiKhoanSQL)) {
@@ -128,7 +130,7 @@ public class NhanVienDAO {
                 stmtNV.executeUpdate();
             }
 
-            conn.commit(); // Hoàn tất transaction
+            conn.commit();
             return true;
 
         } catch (SQLException e) {

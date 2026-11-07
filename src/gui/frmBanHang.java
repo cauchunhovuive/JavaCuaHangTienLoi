@@ -29,7 +29,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
-import ConnectDB.DatabaseConnection;
+import connectDB.DatabaseConnection;
 import dao.ChiTietHoaDonDAO;
 import dao.HoaDonDAO;
 import dao.KhachHangDAO;
@@ -41,7 +41,6 @@ import entities.NhanVien;
 import entities.SanPham;
 import entities.TaiKhoan;
 
-/** Màn hình bán hàng (POS): quét mã vạch / tìm sản phẩm, giỏ hàng, thanh toán. */
 public class frmBanHang extends JPanel {
     private static final long serialVersionUID = 1L;
 
@@ -59,7 +58,7 @@ public class frmBanHang extends JPanel {
     private DefaultTableModel modelGioHang;
     private JLabel lblTongTien;
     private JLabel lblSoMatHang;
-    private KhachHang khachHang = new KhachHang(); // mặc định khách lẻ
+    private KhachHang khachHang = new KhachHang(); 
 
     public frmBanHang(TaiKhoan tk, NhanVien nv) {
         this.taiKhoan = tk;
@@ -130,7 +129,7 @@ public class frmBanHang extends JPanel {
                         BigDecimal thanhTien = ((BigDecimal) gioHang.get(row)[2]).multiply(BigDecimal.valueOf(sl));
                         gioHang.get(row)[4] = thanhTien;
                         super.setValueAt(sl, row, 3);
-                        super.setValueAt(thanhTien, row, 4);
+                        super.setValueAt(String.format("%,.0f", thanhTien), row, 4);
                         tongCong();
                     } catch (NumberFormatException ex) {
                         JOptionPane.showMessageDialog(frmBanHang.this,
@@ -215,7 +214,6 @@ public class frmBanHang extends JPanel {
         pnlDuoi.add(pnlThanhToan, BorderLayout.EAST);
         add(pnlDuoi, BorderLayout.SOUTH);
 
-        // ====== Phím tắt F2 = thanh toán ======
         bangGio.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -226,7 +224,6 @@ public class frmBanHang extends JPanel {
 
     private JLabel lblKhachHang;
 
-    /** Nạp lại dữ liệu (gọi khi chuyển màn). */
     public void taiDuLieu() {
         txtMaVach.setText("");
         txtMaVach.requestFocusInWindow();
@@ -236,7 +233,6 @@ public class frmBanHang extends JPanel {
         String tuKhoa = txtMaVach.getText().trim();
         if (tuKhoa.isEmpty()) return;
 
-        // 1) Thử tìm chính xác theo mã vạch
         SanPham sp = sanPhamDAO.getByMaVach(tuKhoa);
         if (sp != null) {
             themVaoGio(sp.getMaSanPham());
@@ -244,7 +240,6 @@ public class frmBanHang extends JPanel {
             return;
         }
 
-        // 2) Không có → tìm theo tên: 1 kết quả thì thêm thẳng, nhiều kết quả thì cho chọn
         List<SanPham> ds = sanPhamDAO.timKiem(tuKhoa);
         if (ds.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Không tìm thấy sản phẩm với từ khóa: " + tuKhoa,
@@ -263,7 +258,6 @@ public class frmBanHang extends JPanel {
         }
     }
 
-    /** Gọi từ Trang chủ: bấm thẻ sản phẩm là thêm thẳng vào giỏ. */
     public void themSanPhamVaoGio(SanPham sp) {
         if (sp != null) themVaoGio(sp.getMaSanPham());
     }
@@ -281,7 +275,6 @@ public class frmBanHang extends JPanel {
             return;
         }
 
-        // Đã có trong giỏ → +1 (không vượt tồn kho)
         for (int i = 0; i < gioHang.size(); i++) {
             if ((int) gioHang.get(i)[5] == maSP) {
                 int sl = (int) gioHang.get(i)[3];
@@ -290,7 +283,6 @@ public class frmBanHang extends JPanel {
                             "Chỉ còn " + sp.getTonKho() + " " + sp.getDonViTinh() + " trong kho.");
                     return;
                 }
-                // setValueAt(3) tự đồng bộ số lượng, thành tiền và tổng cộng
                 modelGioHang.setValueAt(sl + 1, i, 3);
                 return;
             }
@@ -298,8 +290,9 @@ public class frmBanHang extends JPanel {
 
         gioHang.add(new Object[]{ sp.getTenSanPham(), sp.getDonViTinh(),
                 sp.getGiaBan(), 1, sp.getGiaBan(), sp.getMaSanPham() });
+        String giaBanHienThi = String.format("%,.0f", sp.getGiaBan());
         modelGioHang.addRow(new Object[]{ sp.getTenSanPham(), sp.getDonViTinh(),
-                sp.getGiaBan(), 1, sp.getGiaBan(), sp.getMaSanPham() });
+                giaBanHienThi, 1, giaBanHienThi, sp.getMaSanPham() });
         tongCong();
     }
 
@@ -344,7 +337,6 @@ public class frmBanHang extends JPanel {
         lblKhachHang.setText(kh.getTenKhachHang() + " (" + kh.getDiemTichLuy() + " điểm)");
     }
 
-    /** Thanh toán: hiện dialog nhập tiền, ghi hóa đơn + chi tiết + trừ kho (1 transaction). */
     private void thanhToan() {
         if (gioHang.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Giỏ hàng đang trống.");
@@ -359,7 +351,6 @@ public class frmBanHang extends JPanel {
 
         BigDecimal tong = tongTien();
 
-        // Chọn hình thức thanh toán
         Object[] hinhThuc = {"Tiền mặt", "Chuyển khoản"};
         int chonHT = JOptionPane.showOptionDialog(this,
                 String.format("Tổng tiền: %,.0f đ\nChọn hình thức thanh toán:", tong),
@@ -371,7 +362,6 @@ public class frmBanHang extends JPanel {
         BigDecimal tienKhachDua;
         BigDecimal tienThua;
         if (chuyenKhoan) {
-            // Chuyển khoản: khách đưa đúng tổng, không có tiền thừa
             tienKhachDua = tong;
             tienThua = BigDecimal.ZERO;
         } else {
@@ -392,7 +382,6 @@ public class frmBanHang extends JPanel {
             tienThua = tienKhachDua.subtract(tong);
         }
 
-        // Tính điểm tích (1 điểm / 10.000đ) cho khách thành viên
         int diemTang = 0;
         boolean khThanhVien = khachHang != null && khachHang.getMaKhachHang() > 0;
         if (khThanhVien) {
@@ -403,7 +392,6 @@ public class frmBanHang extends JPanel {
         hd.setNgayLap(java.util.Date.from(LocalDateTime.now().atZone(java.time.ZoneId.systemDefault()).toInstant()));
         hd.setNhanVien(nhanVien);
         hd.setKhachHang(khachHang);
-        hd.setTongTien(tong);
         hd.setTienKhachDua(tienKhachDua);
         hd.setTienThua(tienThua);
         hd.setDiemDuocTang(diemTang);
@@ -438,6 +426,7 @@ public class frmBanHang extends JPanel {
                 ct.setSoLuong(sl);
                 ct.setDonGia((BigDecimal) d[2]);
                 chiTietDAO.them(conn, ct);
+                hd.getChiTiet().add(ct);
             }
 
             if (khThanhVien) {
@@ -459,7 +448,6 @@ public class frmBanHang extends JPanel {
             }
         }
 
-        // Thành công → snapshot giỏ hàng (trước khi xóa) rồi mở bill
         List<Object[]> snapshot = new ArrayList<>();
         for (Object[] d : gioHang) snapshot.add(d.clone());
 
@@ -468,7 +456,7 @@ public class frmBanHang extends JPanel {
         khachHang = new KhachHang();
         lblKhachHang.setText("Khách lẻ");
         tongCong();
-        taiDuLieu(); // nạp lại tồn kho
+        taiDuLieu(); 
 
         java.awt.Window owner = javax.swing.SwingUtilities.getWindowAncestor(this);
         frmInHoaDon bill = new frmInHoaDon(owner, hd, snapshot);
