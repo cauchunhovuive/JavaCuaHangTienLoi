@@ -30,13 +30,9 @@ public class DatabaseConnection {
     }
 
     public Connection getConnection() throws SQLException {
-        System.out.println("[DatabaseConnection] getConnection() called");
-        long start = System.currentTimeMillis();
         try {
             connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            System.out.println("[DatabaseConnection] connection established in " + (System.currentTimeMillis() - start) + "ms");
         } catch (SQLException e) {
-            System.out.println("[DatabaseConnection] connection failed after " + (System.currentTimeMillis() - start) + "ms: " + e.getMessage());
             System.err.println("Error connecting to database: " + e.getMessage());
             throw e;
         }

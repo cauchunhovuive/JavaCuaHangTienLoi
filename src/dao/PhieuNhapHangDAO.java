@@ -46,13 +46,11 @@ public class PhieuNhapHangDAO {
                        "VALUES (?, ?, ?, ?, ?, ?)";
         String sqlCT = "INSERT INTO ChiTietNhapHang (MaPN, MaSP, SoLuong, DonGiaNhap) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-            System.out.println("[PhieuNhapHangDAO] got connection, autoCommit=" + conn.getAutoCommit());
             conn.setAutoCommit(false);
 
             try {
                 int maPN;
                 try (PreparedStatement ps = conn.prepareStatement(sqlPN, Statement.RETURN_GENERATED_KEYS)) {
-                    System.out.println("[PhieuNhapHangDAO] preparing INSERT PhieuNhapHang...");
                     ps.setTimestamp(1, pn.getNgayNhap() == null
                             ? new java.sql.Timestamp(System.currentTimeMillis()) : pn.getNgayNhap());
                     if (pn.getMaNCC() == null) ps.setNull(2, java.sql.Types.INTEGER);
@@ -62,20 +60,16 @@ public class PhieuNhapHangDAO {
                     ps.setBigDecimal(4, pn.getTongTien() == null ? BigDecimal.ZERO : pn.getTongTien());
                     ps.setString(5, pn.getGhiChu());
                     ps.setString(6, pn.getTrangThai() == null ? "HOAN_TAT" : pn.getTrangThai());
-                    System.out.println("[PhieuNhapHangDAO] executing INSERT PhieuNhapHang...");
                     ps.executeUpdate();
-                    System.out.println("[PhieuNhapHangDAO] INSERT PhieuNhapHang done");
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         if (!keys.next()) throw new SQLException("Không lấy được mã phiếu nhập");
                         maPN = keys.getInt(1);
                     }
                 }
 
-                System.out.println("[PhieuNhapHangDAO] maPN=" + maPN + ", dsChiTiet size=" + dsChiTiet.size());
-                // Lấy dữ liệu sản phẩm TRƯỚC khi update (tránh lock conflict giữa 2 connection)
-                System.out.println("[PhieuNhapHangDAO] starting chi tiet loop...");
+                // Lấy dữ liệu sản phẩm trước khi update để tránh lock conflict
                 for (ChiTietNhapHang ct : dsChiTiet) {
-                    // 1. Insert chi tiết
+                    // Insert chi tiết
                     try (PreparedStatement ps = conn.prepareStatement(sqlCT)) {
                         ps.setInt(1, maPN);
                         ps.setInt(2, ct.getMaSP());
@@ -84,7 +78,7 @@ public class PhieuNhapHangDAO {
                         ps.executeUpdate();
                     }
 
-                    // 2. Đọc tonKho và giaVon HIỆN TẠI từ SanPham (trong cùng transaction)
+                    // Đọc tonKho và giaVon hiện tại từ SanPham
                     BigDecimal tonKhoHienTai = null;
                     BigDecimal giaVonHienTai = null;
                     try (PreparedStatement ps = conn.prepareStatement(
@@ -97,11 +91,8 @@ public class PhieuNhapHangDAO {
                             }
                         }
                     }
-                    System.out.println("[PhieuNhapHangDAO] MaSP=" + ct.getMaSP()
-                        + ", tonKhoHienTai=" + tonKhoHienTai
-                        + ", giaVonHienTai=" + giaVonHienTai);
 
-                    // 3. Cộng tồn kho
+                    // Cộng tồn kho
                     try (PreparedStatement ps = conn.prepareStatement(
                             "UPDATE SanPham SET TonKho = TonKho + ? WHERE MaSP = ?")) {
                         ps.setInt(1, ct.getSoLuong());
@@ -109,7 +100,7 @@ public class PhieuNhapHangDAO {
                         ps.executeUpdate();
                     }
 
-                    // 4. Cập nhật giá vốn = trung bình có trọng số
+                    // Cập nhật giá vốn trung bình có trọng số
                     if (tonKhoHienTai != null) {
                         BigDecimal tonCu = tonKhoHienTai;
                         BigDecimal giaVonCu = giaVonHienTai == null ? BigDecimal.ZERO : giaVonHienTai;
@@ -128,13 +119,9 @@ public class PhieuNhapHangDAO {
                     }
                 }
 
-                System.out.println("[PhieuNhapHangDAO] committing transaction...");
                 conn.commit();
-                System.out.println("[PhieuNhapHangDAO] commit done, returning " + maPN);
                 return maPN;
             } catch (SQLException e) {
-                System.out.println("[PhieuNhapHangDAO] SQLException: " + e.getMessage());
-                e.printStackTrace();
                 try { conn.rollback(); } catch (SQLException ex) {
                     System.err.println("Lỗi rollback: " + ex.getMessage());
                 }
@@ -142,8 +129,6 @@ public class PhieuNhapHangDAO {
                 return -1;
             }
         } catch (SQLException e) {
-            System.out.println("[PhieuNhapHangDAO] Connection SQLException: " + e.getMessage());
-            e.printStackTrace();
             System.err.println("Lỗi kết nối DB: " + e.getMessage());
             return -1;
         }

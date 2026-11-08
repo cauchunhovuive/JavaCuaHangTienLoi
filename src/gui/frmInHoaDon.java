@@ -25,19 +25,9 @@ import com.google.zxing.common.BitMatrix;
 
 import entities.HoaDon;
 
-/**
- * Bill sau khi thanh toán — layout giống màn chi tiết hóa đơn cà phê cũ:
- * JTextArea in được + QR chuyển khoản (nếu khách chuyển khoản) + nút In hóa đơn.
- */
 public class frmInHoaDon extends JDialog {
     private static final long serialVersionUID = 1L;
 
-    /**
-     * @param hoaDon  hóa đơn vừa ghi (đã có mã)
-     * @param gioHang snapshot giỏ hàng: [TenSP, DonViTinh, DonGia, SoLuong, ThanhTien, MaSP]
-     * @param tenNV   tên nhân viên lập hóa đơn
-     * @param tenKH   tên khách hàng ("Khách lẻ" nếu không phải thành viên)
-     */
     public frmInHoaDon(java.awt.Window owner, HoaDon hoaDon, List<Object[]> gioHang,
                        String tenNV, String tenKH) {
         super(owner, "Hóa đơn #" + hoaDon.getMaHD(), ModalityType.APPLICATION_MODAL);
@@ -90,7 +80,6 @@ public class frmInHoaDon extends JDialog {
         scr.setBorder(BorderFactory.createEmptyBorder(10, 15, 0, 15));
         add(scr, BorderLayout.CENTER);
 
-        // QR chuyển khoản (như bill cũ: MB Bank)
         if (chuyenKhoan) {
             String thongTin = "MB Bank\nSo tai khoan: 1234567890\nTen: NGUYEN VAN A\nNoi dung: HD"
                     + hoaDon.getMaHD() + " " + String.format("%,.0f VND", tong).replace(",", ".");
@@ -121,7 +110,6 @@ public class frmInHoaDon extends JDialog {
         JPanel pnlNut = new JPanel();
         pnlNut.add(btnIn);
         pnlNut.add(btnDong);
-        // Nếu khung cửa sổ vượt quá chiều cao màn hình thì không chặn rê chuột
         if (getHeight() > GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds().height) {
             setAlwaysOnTop(true);
         }

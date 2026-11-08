@@ -321,35 +321,25 @@ public class frmNhapHang extends JPanel {
     }
 
     private void taoPhieuNhap() {
-        System.out.println("[frmNhapHang] taoPhieuNhap() called");
         if (chiTiet.isEmpty()) {
-            System.out.println("[frmNhapHang] chiTiet.isEmpty() -> return");
             JOptionPane.showMessageDialog(this, "Chưa có dòng hàng nào.");
             return;
         }
         NhaCungCap ncc = (NhaCungCap) cbNhaCungCap.getSelectedItem();
         if (ncc == null) {
-            System.out.println("[frmNhapHang] ncc == null -> return");
             JOptionPane.showMessageDialog(this, "Chọn nhà cung cấp.");
             return;
         }
         if (nhanVien == null) {
-            System.out.println("[frmNhapHang] nhanVien == null -> return");
             JOptionPane.showMessageDialog(this, "Tài khoản chưa gắn nhân viên. Liên hệ quản lý.",
                     "Không thể nhập", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        System.out.println("[frmNhapHang] ncc=" + ncc.getMaNCC() + "/" + ncc.getTenNCC()
-            + ", nhanVien=" + nhanVien.getMaNV()
-            + ", tongTien=" + tongTien()
-            + ", chiTiet size=" + chiTiet.size());
-
         int chon = JOptionPane.showConfirmDialog(this,
                 String.format("Lập phiếu nhập tổng %,.0f đ từ \"%s\"?\nTồn kho sẽ được cộng ngay.",
                         tongTien(), ncc.getTenNCC()),
                 "Xác nhận nhập hàng", JOptionPane.YES_NO_OPTION);
-        System.out.println("[frmNhapHang] user selected: " + (chon == JOptionPane.YES_OPTION ? "YES" : "NO/CANCEL"));
         if (chon != JOptionPane.YES_OPTION) return;
 
         PhieuNhapHang pn = new PhieuNhapHang();
@@ -366,9 +356,7 @@ public class frmNhapHang extends JPanel {
         }
 
         try {
-            System.out.println("[frmNhapHang] calling phieuDAO.taoPhieuNhap()...");
             int maPN = phieuDAO.taoPhieuNhap(pn, dsCT);
-            System.out.println("[frmNhapHang] phieuDAO returned: " + maPN);
             if (maPN < 0) {
                 JOptionPane.showMessageDialog(this, "Lập phiếu thất bại. Đã hủy toàn bộ thay đổi.",
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -378,14 +366,8 @@ public class frmNhapHang extends JPanel {
             donPhieu();
             taiDuLieu();
         } catch (Exception e) {
-            String msg = e.getMessage();
-            if (msg == null || msg.isEmpty()) msg = e.getClass().getName();
-            StringBuilder sb = new StringBuilder("Lập phiếu thất bại: " + msg + "\n\n");
-            sb.append("Stack trace:\n");
-            for (StackTraceElement ste : e.getStackTrace()) {
-                sb.append(ste.toString()).append("\n");
-            }
-            JOptionPane.showMessageDialog(this, sb.toString(),
+            JOptionPane.showMessageDialog(this,
+                "Lập phiếu thất bại: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
                 "Lỗi", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }

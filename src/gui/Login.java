@@ -26,7 +26,7 @@ public class Login extends JFrame {
     private TaiKhoan tk = new TaiKhoan();
     private TaiKhoanDAO taiKhoanDAO = new TaiKhoanDAO();
 
-    public Login() {
+    public Login() {	
         initComponents();
         setLocationRelativeTo(null);
     }
