@@ -19,7 +19,7 @@ import entities.SanPham;
 public class PhieuNhapHangDAO {
 
     private static final String SELECT_COLS =
-            "SELECT MaPN, NgayNhap, MaNCC, MaNV, TongTien, GhiChu, TrangThai FROM PhieuNhapHang";
+            "SELECT MaPN, NgayNhap, MaNCC, MaNV, GhiChu, TrangThai FROM PhieuNhapHang";
 
     private PhieuNhapHang map(ResultSet rs) throws SQLException {
         PhieuNhapHang pn = new PhieuNhapHang();
@@ -31,7 +31,6 @@ public class PhieuNhapHangDAO {
         int maNV = rs.getInt("MaNV");
         pn.setMaNV(rs.wasNull() ? null : maNV);
 
-        pn.setTongTien(rs.getBigDecimal("TongTien"));
         pn.setGhiChu(rs.getString("GhiChu"));
         pn.setTrangThai(rs.getString("TrangThai"));
         return pn;
@@ -42,8 +41,8 @@ public class PhieuNhapHangDAO {
      * Toàn bộ nằm trong 1 transaction — trả về mã phiếu, -1 nếu lỗi (đã rollback).
      */
     public int taoPhieuNhap(PhieuNhapHang pn, List<ChiTietNhapHang> dsChiTiet) {
-        String sqlPN = "INSERT INTO PhieuNhapHang (NgayNhap, MaNCC, MaNV, TongTien, GhiChu, TrangThai) " +
-                       "VALUES (?, ?, ?, ?, ?, ?)";
+        String sqlPN = "INSERT INTO PhieuNhapHang (NgayNhap, MaNCC, MaNV, GhiChu, TrangThai) " +
+                       "VALUES (?, ?, ?, ?, ?)";
         String sqlCT = "INSERT INTO ChiTietNhapHang (MaPN, MaSP, SoLuong, DonGiaNhap) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
             conn.setAutoCommit(false);
@@ -57,9 +56,8 @@ public class PhieuNhapHangDAO {
                     else ps.setInt(2, pn.getMaNCC());
                     if (pn.getMaNV() == null) ps.setNull(3, java.sql.Types.INTEGER);
                     else ps.setInt(3, pn.getMaNV());
-                    ps.setBigDecimal(4, pn.getTongTien() == null ? BigDecimal.ZERO : pn.getTongTien());
-                    ps.setString(5, pn.getGhiChu());
-                    ps.setString(6, pn.getTrangThai() == null ? "HOAN_TAT" : pn.getTrangThai());
+                    ps.setString(4, pn.getGhiChu());
+                    ps.setString(5, pn.getTrangThai() == null ? "HOAN_TAT" : pn.getTrangThai());
                     ps.executeUpdate();
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         if (!keys.next()) throw new SQLException("Không lấy được mã phiếu nhập");
@@ -179,8 +177,10 @@ public class PhieuNhapHangDAO {
     }
 
     public BigDecimal tongNhapTheoNgay(Date tuNgay, Date denNgay) {
-        String sql = "SELECT ISNULL(SUM(TongTien), 0) FROM PhieuNhapHang " +
-                     "WHERE NgayNhap >= ? AND NgayNhap < DATEADD(DAY, 1, ?)";
+        String sql = "SELECT ISNULL(SUM(ct.SoLuong * ct.DonGiaNhap), 0) " +
+                     "FROM PhieuNhapHang pn " +
+                     "JOIN ChiTietNhapHang ct ON ct.MaPN = pn.MaPN " +
+                     "WHERE pn.NgayNhap >= ? AND pn.NgayNhap < DATEADD(DAY, 1, ?)";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDate(1, tuNgay);

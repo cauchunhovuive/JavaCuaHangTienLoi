@@ -234,6 +234,20 @@ CREATE TABLE ChiTietNhapHang (
 );
 GO
 
+-- TongTien là thuộc tính dẫn xuất: = SUM(ChiTietNhapHang.SoLuong * DonGiaNhap),
+-- không lưu trữ. Với DB tạo từ phiên bản trước: bỏ cột TongTien.
+IF OBJECT_ID('PhieuNhapHang') IS NOT NULL AND COL_LENGTH('PhieuNhapHang', 'TongTien') IS NOT NULL
+BEGIN
+    DECLARE @dfTongTienPN NVARCHAR(200);
+    SELECT @dfTongTienPN = dc.name
+      FROM sys.default_constraints dc
+      JOIN sys.columns c ON c.default_object_id = dc.object_id
+     WHERE dc.parent_object_id = OBJECT_ID('PhieuNhapHang') AND c.name = 'TongTien';
+    IF @dfTongTienPN IS NOT NULL EXEC('ALTER TABLE PhieuNhapHang DROP CONSTRAINT ' + @dfTongTienPN);
+    ALTER TABLE PhieuNhapHang DROP COLUMN TongTien;
+END
+GO
+
 -- ---------------------------------------------------------------------
 -- DỮ LIỆU MẪU: địa chỉ (được NhaCungCap và NhanVien tham chiếu qua MaDiaChi)
 -- ---------------------------------------------------------------------

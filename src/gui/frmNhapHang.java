@@ -245,11 +245,21 @@ public class frmNhapHang extends JPanel {
                     pn.getNgayNhap() == null ? "" : FMT_NGAY.format(pn.getNgayNhap()),
                     pn.getMaNCC() == null ? "" : tenNCC.getOrDefault(pn.getMaNCC(), ""),
                     pn.getMaNV() == null ? "" : tenNhanVien.getOrDefault(pn.getMaNV(), ""),
-                    String.format("%,.0f", pn.getTongTien() == null ? BigDecimal.ZERO : pn.getTongTien()),
+                    String.format("%,.0f", tongTienPhieu(pn.getMaPN())),
                     pn.getGhiChu() == null ? "" : pn.getGhiChu(),
                     pn.getTrangThai() == null ? "" : pn.getTrangThai()
             });
         }
+    }
+
+    /** Tính tổng tiền của 1 phiếu bằng cách lấy chi tiết và tính SUM(SoLuong * DonGiaNhap).
+     * Là thuộc tính dẫn xuất — không lưu trữ trong DB. */
+    private BigDecimal tongTienPhieu(int maPN) {
+        BigDecimal tong = BigDecimal.ZERO;
+        for (ChiTietNhapHang ct : phieuDAO.getChiTietByMaPN(maPN)) {
+            tong = tong.add(ct.getThanhTien());
+        }
+        return tong;
     }
 
     private void themDong() {
@@ -346,9 +356,10 @@ public class frmNhapHang extends JPanel {
         pn.setNgayNhap(new Timestamp(System.currentTimeMillis()));
         pn.setMaNCC(ncc.getMaNCC());
         pn.setMaNV(nhanVien.getMaNV());
-        pn.setTongTien(tongTien());
         pn.setGhiChu(txtGhiChu.getText().trim());
         pn.setTrangThai("HOAN_TAT");
+
+        // TongTien là thuộc tính dẫn xuất, không lưu trữ — bỏ setTongTien
 
         List<ChiTietNhapHang> dsCT = new ArrayList<>();
         for (Object[] d : chiTiet) {

@@ -8,7 +8,6 @@ public class PhieuNhapHang {
     private Timestamp ngayNhap;
     private Integer maNCC;
     private Integer maNV;
-    private BigDecimal tongTien;
     private String ghiChu;
     private String trangThai;
 
@@ -16,12 +15,11 @@ public class PhieuNhapHang {
     }
 
     public PhieuNhapHang(int maPN, Timestamp ngayNhap, Integer maNCC, Integer maNV,
-                         BigDecimal tongTien, String ghiChu, String trangThai) {
+                         String ghiChu, String trangThai) {
         this.maPN = maPN;
         this.ngayNhap = ngayNhap;
         this.maNCC = maNCC;
         this.maNV = maNV;
-        this.tongTien = tongTien;
         this.ghiChu = ghiChu;
         this.trangThai = trangThai;
     }
@@ -56,14 +54,6 @@ public class PhieuNhapHang {
 
     public void setMaNV(Integer maNV) {
         this.maNV = maNV;
-    }
-
-    public BigDecimal getTongTien() {
-        return tongTien;
-    }
-
-    public void setTongTien(BigDecimal tongTien) {
-        this.tongTien = tongTien;
     }
 
     public String getGhiChu() {
