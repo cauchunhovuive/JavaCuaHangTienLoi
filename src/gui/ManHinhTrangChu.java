@@ -178,7 +178,7 @@ public class ManHinhTrangChu extends JPanel {
 
         for (SanPham sp : dsSP) {
             if (!tuKhoa.isEmpty()
-                    && !sp.getTenSanPham().toLowerCase().contains(tuKhoa)
+                    && !sp.getTenSP().toLowerCase().contains(tuKhoa)
                     && !(sp.getMaVach() != null && sp.getMaVach().contains(tuKhoa))) {
                 continue;
             }
@@ -208,7 +208,7 @@ public class ManHinhTrangChu extends JPanel {
         lblAnh.setIcon(tayAnh(sp.getHinhAnh(), 150, 110));
         the.add(lblAnh, BorderLayout.NORTH);
 
-        JLabel lblTen = new JLabel("<html><div style='text-align:center'>" + sp.getTenSanPham() + "</div></html>");
+        JLabel lblTen = new JLabel("<html><div style='text-align:center'>" + sp.getTenSP() + "</div></html>");
         lblTen.setFont(new Font("SansSerif", Font.BOLD, 12));
         lblTen.setHorizontalAlignment(SwingConstants.CENTER);
         the.add(lblTen, BorderLayout.CENTER);

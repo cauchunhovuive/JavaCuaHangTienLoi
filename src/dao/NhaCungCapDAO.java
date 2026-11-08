@@ -60,7 +60,7 @@ public class NhaCungCapDAO {
             stmt.setString(1, ncc.getTenNCC());
             stmt.setString(2, ncc.getSoDienThoai());
             stmt.setString(3, ncc.getEmail());
-            stmt.setInt(4, ncc.getMaDiaChi());
+            stmt.setObject(4, ncc.getMaDiaChi(), java.sql.Types.INTEGER);
             stmt.setString(5, ncc.getTrangThai());
             stmt.setTimestamp(6, ncc.getNgayTao());
 
@@ -81,7 +81,7 @@ public class NhaCungCapDAO {
             stmt.setString(1, ncc.getTenNCC());
             stmt.setString(2, ncc.getSoDienThoai());
             stmt.setString(3, ncc.getEmail());
-            stmt.setInt(4, ncc.getMaDiaChi());
+            stmt.setObject(4, ncc.getMaDiaChi(), java.sql.Types.INTEGER);
             stmt.setString(5, ncc.getTrangThai());
             stmt.setTimestamp(6, ncc.getNgayTao());
             stmt.setInt(7, ncc.getMaNCC());
@@ -113,7 +113,8 @@ public class NhaCungCapDAO {
         ncc.setTenNCC(rs.getString("TenNCC"));
         ncc.setSoDienThoai(rs.getString("SoDienThoai"));
         ncc.setEmail(rs.getString("Email"));
-        ncc.setMaDiaChi(rs.getInt("MaDiaChi"));
+        int maDiaChi = rs.getInt("MaDiaChi");
+        ncc.setMaDiaChi(rs.wasNull() ? null : maDiaChi);
         ncc.setTrangThai(rs.getString("TrangThai"));
         ncc.setNgayTao(rs.getTimestamp("NgayTao"));
         return ncc;

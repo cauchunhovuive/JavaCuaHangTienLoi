@@ -1,7 +1,5 @@
 package entities;
 
-
-
 import java.sql.Timestamp;
 
 public class NhaCungCap {
@@ -9,13 +7,15 @@ public class NhaCungCap {
     private String tenNCC;
     private String soDienThoai;
     private String email;
-    private int maDiaChi;
+    private Integer maDiaChi;
     private String trangThai;
     private Timestamp ngayTao;
 
-    public NhaCungCap() {}
+    public NhaCungCap() {
+    }
 
-    public NhaCungCap(int maNCC, String tenNCC, String soDienThoai, String email, int maDiaChi, String trangThai, Timestamp ngayTao) {
+    public NhaCungCap(int maNCC, String tenNCC, String soDienThoai, String email,
+                      Integer maDiaChi, String trangThai, Timestamp ngayTao) {
         this.maNCC = maNCC;
         this.tenNCC = tenNCC;
         this.soDienThoai = soDienThoai;
@@ -57,11 +57,11 @@ public class NhaCungCap {
         this.email = email;
     }
 
-    public int getMaDiaChi() {
+    public Integer getMaDiaChi() {
         return maDiaChi;
     }
 
-    public void setMaDiaChi(int maDiaChi) {
+    public void setMaDiaChi(Integer maDiaChi) {
         this.maDiaChi = maDiaChi;
     }
 

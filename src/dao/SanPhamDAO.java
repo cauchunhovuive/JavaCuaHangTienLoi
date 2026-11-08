@@ -10,47 +10,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 import connectDB.DatabaseConnection;
-import entities.LoaiSanPham;
 import entities.SanPham;
 
 /** DAO cho sản phẩm tiện lợi (theo mã vạch, có tồn kho). */
 public class SanPhamDAO {
 
     private static final String SELECT_COLS =
-            "SELECT sp.MaSP, sp.MaVach, sp.TenSP, sp.MaLoai, lsp.TenLoai, sp.DonViTinh, " +
-            "sp.GiaBan, sp.GiaVon, sp.TonKho, sp.TonToiThieu, sp.TrangThai, sp.HinhAnh, " +
-            "sp.MaNCC, ncc.TenNCC " +
-            "FROM SanPham sp LEFT JOIN LoaiSanPham lsp ON sp.MaLoai = lsp.MaLoai " +
-            "LEFT JOIN NhaCungCap ncc ON sp.MaNCC = ncc.MaNCC";
+            "SELECT MaSP, MaVach, TenSP, MaLoai, DonViTinh, GiaBan, GiaVon, " +
+            "TonKho, TonToiThieu, HinhAnh, TrangThai, MaNCC FROM SanPham";
 
     private SanPham map(ResultSet rs) throws SQLException {
         SanPham sp = new SanPham();
-        sp.setMaSanPham(rs.getInt("MaSP"));
+        sp.setMaSP(rs.getInt("MaSP"));
         sp.setMaVach(rs.getString("MaVach"));
-        sp.setTenSanPham(rs.getString("TenSP"));
-        LoaiSanPham loai = new LoaiSanPham();
+        sp.setTenSP(rs.getString("TenSP"));
+
         int maLoai = rs.getInt("MaLoai");
-        if (maLoai > 0) {
-            loai.setMaLoai(maLoai);
-            loai.setTenLoai(rs.getString("TenLoai"));
-        }
-        sp.setLoaiSanPham(loai);
+        sp.setMaLoai(rs.wasNull() ? null : maLoai);
+
         sp.setDonViTinh(rs.getString("DonViTinh"));
         sp.setGiaBan(rs.getBigDecimal("GiaBan"));
         sp.setGiaVon(rs.getBigDecimal("GiaVon"));
         sp.setTonKho(rs.getInt("TonKho"));
         sp.setTonToiThieu(rs.getInt("TonToiThieu"));
-        sp.setTrangThai(rs.getString("TrangThai"));
         sp.setHinhAnh(rs.getString("HinhAnh"));
-        sp.setMaNhaCungCap(rs.getInt("MaNCC"));
-        sp.setTenNhaCungCap(rs.getString("TenNCC"));
+        sp.setTrangThai(rs.getString("TrangThai"));
+
+        int maNCC = rs.getInt("MaNCC");
+        sp.setMaNCC(rs.wasNull() ? null : maNCC);
         return sp;
     }
 
     public List<SanPham> getAll() {
         List<SanPham> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement ps = conn.prepareStatement(SELECT_COLS + " ORDER BY sp.TenSP");
+             PreparedStatement ps = conn.prepareStatement(SELECT_COLS + " ORDER BY TenSP");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) list.add(map(rs));
         } catch (SQLException e) {
@@ -62,7 +56,7 @@ public class SanPhamDAO {
     /** Tìm theo mã vạch hoặc tên (dùng cho ô quét mã ở POS). */
     public List<SanPham> timKiem(String tuKhoa) {
         List<SanPham> list = new ArrayList<>();
-        String sql = SELECT_COLS + " WHERE sp.MaVach LIKE ? OR sp.TenSP LIKE ? ORDER BY sp.TenSP";
+        String sql = SELECT_COLS + " WHERE MaVach LIKE ? OR TenSP LIKE ? ORDER BY TenSP";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             String kw = "%" + tuKhoa + "%";
@@ -78,7 +72,7 @@ public class SanPhamDAO {
     }
 
     public SanPham getByMaVach(String maVach) {
-        String sql = SELECT_COLS + " WHERE sp.MaVach = ?";
+        String sql = SELECT_COLS + " WHERE MaVach = ?";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, maVach);
@@ -92,7 +86,7 @@ public class SanPhamDAO {
     }
 
     public SanPham getByMaSP(int maSP) {
-        String sql = SELECT_COLS + " WHERE sp.MaSP = ?";
+        String sql = SELECT_COLS + " WHERE MaSP = ?";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, maSP);
@@ -105,29 +99,28 @@ public class SanPhamDAO {
         return null;
     }
 
-    private void setSanPhamParams(PreparedStatement ps, SanPham sp) throws SQLException {
-        ps.setString(1, sp.getMaVach());
-        ps.setString(2, sp.getTenSanPham());
-        if (sp.getLoaiSanPham() != null && sp.getLoaiSanPham().getMaLoai() > 0)
-            ps.setInt(3, sp.getLoaiSanPham().getMaLoai());
-        else ps.setNull(3, Types.INTEGER);
+    private void ganCotSoVaTien(PreparedStatement ps, SanPham sp) throws SQLException {
+        if (sp.getMaLoai() == null || sp.getMaLoai() <= 0) ps.setNull(3, Types.INTEGER);
+        else ps.setInt(3, sp.getMaLoai());
         ps.setString(4, sp.getDonViTinh());
         ps.setBigDecimal(5, sp.getGiaBan());
         ps.setBigDecimal(6, sp.getGiaVon() == null ? BigDecimal.ZERO : sp.getGiaVon());
     }
 
     public boolean them(SanPham sp) {
-        String sql = "INSERT INTO SanPham (MaVach, TenSP, MaLoai, DonViTinh, GiaBan, GiaVon, TonKho, TonToiThieu, TrangThai, HinhAnh, MaNCC) " +
+        String sql = "INSERT INTO SanPham (MaVach, TenSP, MaLoai, DonViTinh, GiaBan, GiaVon, TonKho, TonToiThieu, HinhAnh, TrangThai, MaNCC) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            setSanPhamParams(ps, sp);
+            ps.setString(1, sp.getMaVach());
+            ps.setString(2, sp.getTenSP());
+            ganCotSoVaTien(ps, sp);
             ps.setInt(7, sp.getTonKho());
             ps.setInt(8, sp.getTonToiThieu());
-            ps.setString(9, sp.getTrangThai());
-            ps.setString(10, sp.getHinhAnh());
-            if (sp.getMaNhaCungCap() > 0) ps.setInt(11, sp.getMaNhaCungCap());
-            else ps.setNull(11, Types.INTEGER);
+            ps.setString(9, sp.getHinhAnh());
+            ps.setString(10, sp.getTrangThai());
+            if (sp.getMaNCC() == null || sp.getMaNCC() <= 0) ps.setNull(11, Types.INTEGER);
+            else ps.setInt(11, sp.getMaNCC());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Lỗi thêm sản phẩm: " + e.getMessage());
@@ -136,23 +129,19 @@ public class SanPhamDAO {
     }
 
     public boolean sua(SanPham sp) {
-        String sql = "UPDATE SanPham SET MaVach=?, TenSP=?, MaLoai=?, DonViTinh=?, GiaBan=?, GiaVon=?, TonToiThieu=?, TrangThai=?, HinhAnh=?, MaNCC=? WHERE MaSP=?";
+        String sql = "UPDATE SanPham SET MaVach=?, TenSP=?, MaLoai=?, DonViTinh=?, GiaBan=?, GiaVon=?, " +
+                     "TonToiThieu=?, HinhAnh=?, TrangThai=?, MaNCC=? WHERE MaSP=?";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, sp.getMaVach());
-            ps.setString(2, sp.getTenSanPham());
-            if (sp.getLoaiSanPham() != null && sp.getLoaiSanPham().getMaLoai() > 0)
-                ps.setInt(3, sp.getLoaiSanPham().getMaLoai());
-            else ps.setNull(3, Types.INTEGER);
-            ps.setString(4, sp.getDonViTinh());
-            ps.setBigDecimal(5, sp.getGiaBan());
-            ps.setBigDecimal(6, sp.getGiaVon() == null ? BigDecimal.ZERO : sp.getGiaVon());
+            ps.setString(2, sp.getTenSP());
+            ganCotSoVaTien(ps, sp);
             ps.setInt(7, sp.getTonToiThieu());
-            ps.setString(8, sp.getTrangThai());
-            ps.setString(9, sp.getHinhAnh());
-            if (sp.getMaNhaCungCap() > 0) ps.setInt(10, sp.getMaNhaCungCap());
-            else ps.setNull(10, Types.INTEGER);
-            ps.setInt(11, sp.getMaSanPham());
+            ps.setString(8, sp.getHinhAnh());
+            ps.setString(9, sp.getTrangThai());
+            if (sp.getMaNCC() == null || sp.getMaNCC() <= 0) ps.setNull(10, Types.INTEGER);
+            else ps.setInt(10, sp.getMaNCC());
+            ps.setInt(11, sp.getMaSP());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Lỗi sửa sản phẩm: " + e.getMessage());
@@ -229,7 +218,7 @@ public class SanPhamDAO {
     /** Sản phẩm của 1 nhà cung cấp (dùng ở màn nhập hàng). */
     public List<SanPham> getTheoNhaCungCap(int maNCC) {
         List<SanPham> list = new ArrayList<>();
-        String sql = SELECT_COLS + " WHERE sp.MaNCC = ? ORDER BY sp.TenSP";
+        String sql = SELECT_COLS + " WHERE MaNCC = ? ORDER BY TenSP";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, maNCC);
@@ -244,7 +233,7 @@ public class SanPhamDAO {
 
     public List<SanPham> getSapHet() {
         List<SanPham> list = new ArrayList<>();
-        String sql = SELECT_COLS + " WHERE sp.TonKho <= sp.TonToiThieu ORDER BY sp.TonKho";
+        String sql = SELECT_COLS + " WHERE TonKho <= TonToiThieu ORDER BY TonKho";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

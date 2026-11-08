@@ -1,68 +1,78 @@
 package entities;
 
-import java.util.Date;
+import java.sql.Timestamp;
 
 public class TaiKhoan {
-	private String tenTaiKhoan;
-	private String matKhau;
-	private String email;
-	private PhanQuyen quyen;   
-	private Date ngayTao;
-	private String trangThai;  
-	public TaiKhoan() {
-	}
+    private String tenTaiKhoan;
+    private String matKhau;
+    private String email;
+    private int maQuyen;
+    private Timestamp ngayTao;
+    private String trangThai;
 
-	public TaiKhoan(String tenTaiKhoan, String matKhau, PhanQuyen quyen) {
-		this.tenTaiKhoan = tenTaiKhoan;
-		this.matKhau = matKhau;
-		this.quyen = quyen;
-	}
+    public TaiKhoan() {
+    }
 
-	public String getTenTaiKhoan() {
-		return tenTaiKhoan;
-	}
+    public TaiKhoan(String tenTaiKhoan, String matKhau, String email, int maQuyen,
+                    Timestamp ngayTao, String trangThai) {
+        this.tenTaiKhoan = tenTaiKhoan;
+        this.matKhau = matKhau;
+        this.email = email;
+        this.maQuyen = maQuyen;
+        this.ngayTao = ngayTao;
+        this.trangThai = trangThai;
+    }
 
-	public void setTenTaiKhoan(String tenTaiKhoan) {
-		this.tenTaiKhoan = tenTaiKhoan;
-	}
+    public String getTenTaiKhoan() {
+        return tenTaiKhoan;
+    }
 
-	public String getMatKhau() {
-		return matKhau;
-	}
+    public void setTenTaiKhoan(String tenTaiKhoan) {
+        this.tenTaiKhoan = tenTaiKhoan;
+    }
 
-	public void setMatKhau(String matKhau) {
-		this.matKhau = matKhau;
-	}
+    public String getMatKhau() {
+        return matKhau;
+    }
 
-	public String getEmail() {
-		return email;
-	}
+    public void setMatKhau(String matKhau) {
+        this.matKhau = matKhau;
+    }
 
-	public void setEmail(String email) {
-		this.email = email;
-	}
+    public String getEmail() {
+        return email;
+    }
 
-	public PhanQuyen getQuyen() {
-		return quyen;
-	}
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-	public void setQuyen(PhanQuyen quyen) {
-		this.quyen = quyen;
-	}
+    public int getMaQuyen() {
+        return maQuyen;
+    }
 
-	public Date getNgayTao() {
-		return ngayTao;
-	}
+    public void setMaQuyen(int maQuyen) {
+        this.maQuyen = maQuyen;
+    }
 
-	public void setNgayTao(Date ngayTao) {
-		this.ngayTao = ngayTao;
-	}
+    public Timestamp getNgayTao() {
+        return ngayTao;
+    }
 
-	public String getTrangThai() {
-		return trangThai;
-	}
+    public void setNgayTao(Timestamp ngayTao) {
+        this.ngayTao = ngayTao;
+    }
 
-	public void setTrangThai(String trangThai) {
-		this.trangThai = trangThai;
-	}
+    public String getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(String trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    @Override
+    public String toString() {
+        return tenTaiKhoan;
+    }
 }

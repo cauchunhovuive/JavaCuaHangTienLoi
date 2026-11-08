@@ -3,82 +3,142 @@ package entities;
 import java.math.BigDecimal;
 
 public class SanPham {
-    private int maSanPham;
-    private String maVach;         
-    private String tenSanPham;
-    private LoaiSanPham loaiSanPham;
-    private String donViTinh;      
+    private int maSP;
+    private String maVach;
+    private String tenSP;
+    private Integer maLoai;
+    private String donViTinh;
     private BigDecimal giaBan;
     private BigDecimal giaVon;
     private int tonKho;
-    private int tonToiThieu;        
-    private String trangThai;       
-    private String hinhAnh;         
-    private int maNhaCungCap;       
-    private String tenNhaCungCap;  
+    private int tonToiThieu;
+    private String hinhAnh;
+    private String trangThai;
+    private Integer maNCC;
 
     public SanPham() {
     }
-    public SanPham(int maSanPham, String maVach, String tenSanPham, LoaiSanPham loaiSanPham,
-                   String donViTinh, BigDecimal giaBan, BigDecimal giaVon,
-                   int tonKho, int tonToiThieu, String trangThai) {
-        this.maSanPham = maSanPham;
+
+    public SanPham(int maSP, String maVach, String tenSP, Integer maLoai, String donViTinh,
+                   BigDecimal giaBan, BigDecimal giaVon, int tonKho, int tonToiThieu,
+                   String hinhAnh, String trangThai, Integer maNCC) {
+        this.maSP = maSP;
         this.maVach = maVach;
-        this.tenSanPham = tenSanPham;
-        this.loaiSanPham = loaiSanPham;
+        this.tenSP = tenSP;
+        this.maLoai = maLoai;
         this.donViTinh = donViTinh;
         this.giaBan = giaBan;
         this.giaVon = giaVon;
         this.tonKho = tonKho;
         this.tonToiThieu = tonToiThieu;
+        this.hinhAnh = hinhAnh;
+        this.trangThai = trangThai;
+        this.maNCC = maNCC;
+    }
+
+    public int getMaSP() {
+        return maSP;
+    }
+
+    public void setMaSP(int maSP) {
+        this.maSP = maSP;
+    }
+
+    public String getMaVach() {
+        return maVach;
+    }
+
+    public void setMaVach(String maVach) {
+        this.maVach = maVach;
+    }
+
+    public String getTenSP() {
+        return tenSP;
+    }
+
+    public void setTenSP(String tenSP) {
+        this.tenSP = tenSP;
+    }
+
+    public Integer getMaLoai() {
+        return maLoai;
+    }
+
+    public void setMaLoai(Integer maLoai) {
+        this.maLoai = maLoai;
+    }
+
+    public String getDonViTinh() {
+        return donViTinh;
+    }
+
+    public void setDonViTinh(String donViTinh) {
+        this.donViTinh = donViTinh;
+    }
+
+    public BigDecimal getGiaBan() {
+        return giaBan;
+    }
+
+    public void setGiaBan(BigDecimal giaBan) {
+        this.giaBan = giaBan;
+    }
+
+    public BigDecimal getGiaVon() {
+        return giaVon;
+    }
+
+    public void setGiaVon(BigDecimal giaVon) {
+        this.giaVon = giaVon;
+    }
+
+    public int getTonKho() {
+        return tonKho;
+    }
+
+    public void setTonKho(int tonKho) {
+        this.tonKho = tonKho;
+    }
+
+    public int getTonToiThieu() {
+        return tonToiThieu;
+    }
+
+    public void setTonToiThieu(int tonToiThieu) {
+        this.tonToiThieu = tonToiThieu;
+    }
+
+    public String getHinhAnh() {
+        return hinhAnh;
+    }
+
+    public void setHinhAnh(String hinhAnh) {
+        this.hinhAnh = hinhAnh;
+    }
+
+    public String getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(String trangThai) {
         this.trangThai = trangThai;
     }
 
-    public int getMaSanPham() { return maSanPham; }
-    public void setMaSanPham(int maSanPham) { this.maSanPham = maSanPham; }
+    public Integer getMaNCC() {
+        return maNCC;
+    }
 
-    public String getMaVach() { return maVach; }
-    public void setMaVach(String maVach) { this.maVach = maVach; }
+    public void setMaNCC(Integer maNCC) {
+        this.maNCC = maNCC;
+    }
 
-    public String getTenSanPham() { return tenSanPham; }
-    public void setTenSanPham(String tenSanPham) { this.tenSanPham = tenSanPham; }
-
-    public LoaiSanPham getLoaiSanPham() { return loaiSanPham; }
-    public void setLoaiSanPham(LoaiSanPham loaiSanPham) { this.loaiSanPham = loaiSanPham; }
-
-    public String getDonViTinh() { return donViTinh; }
-    public void setDonViTinh(String donViTinh) { this.donViTinh = donViTinh; }
-
-    public BigDecimal getGiaBan() { return giaBan; }
-    public void setGiaBan(BigDecimal giaBan) { this.giaBan = giaBan; }
-
-    public BigDecimal getGiaVon() { return giaVon; }
-    public void setGiaVon(BigDecimal giaVon) { this.giaVon = giaVon; }
-
-    public int getTonKho() { return tonKho; }
-    public void setTonKho(int tonKho) { this.tonKho = tonKho; }
-
-    public int getTonToiThieu() { return tonToiThieu; }
-    public void setTonToiThieu(int tonToiThieu) { this.tonToiThieu = tonToiThieu; }
-
-    public String getTrangThai() { return trangThai; }
-    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
-
-    public String getHinhAnh() { return hinhAnh; }
-    public void setHinhAnh(String hinhAnh) { this.hinhAnh = hinhAnh; }
-
-    public int getMaNhaCungCap() { return maNhaCungCap; }
-    public void setMaNhaCungCap(int maNhaCungCap) { this.maNhaCungCap = maNhaCungCap; }
-
-    public String getTenNhaCungCap() { return tenNhaCungCap; }
-    public void setTenNhaCungCap(String tenNhaCungCap) { this.tenNhaCungCap = tenNhaCungCap; }
-
+    /** Thuộc tính dẫn xuất: cảnh báo tồn kho thấp (không phải cột trong CSDL). */
     public boolean isSapHet() {
         return tonKho <= tonToiThieu;
     }
 
     @Override
     public String toString() {
-        return tenSanPham + " [" + maVach + "]";
+        return tenSP + " [" + maVach + "]";
     }
 }

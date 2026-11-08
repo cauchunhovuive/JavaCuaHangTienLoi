@@ -2,43 +2,66 @@ package entities;
 
 import java.math.BigDecimal;
 
-/** Khách hàng: khách lẻ (maKhachHang = 0) hoặc thành viên tích điểm. */
 public class KhachHang {
-    private int maKhachHang;
-    private String tenKhachHang;
+    private int maKH;
+    private String tenKH;
     private String soDienThoai;
-    private int diemTichLuy;
+    private Integer diemTichLuy;
     private BigDecimal tongChiTieu;
 
     public KhachHang() {
-        this.tenKhachHang = "Khách lẻ";
     }
 
-    public KhachHang(int maKhachHang, String tenKhachHang, String soDienThoai, int diemTichLuy, BigDecimal tongChiTieu) {
-        this.maKhachHang = maKhachHang;
-        this.tenKhachHang = tenKhachHang;
+    public KhachHang(int maKH, String tenKH, String soDienThoai, Integer diemTichLuy, BigDecimal tongChiTieu) {
+        this.maKH = maKH;
+        this.tenKH = tenKH;
         this.soDienThoai = soDienThoai;
         this.diemTichLuy = diemTichLuy;
         this.tongChiTieu = tongChiTieu;
     }
 
-    public int getMaKhachHang() { return maKhachHang; }
-    public void setMaKhachHang(int maKhachHang) { this.maKhachHang = maKhachHang; }
+    public int getMaKH() {
+        return maKH;
+    }
 
-    public String getTenKhachHang() { return tenKhachHang; }
-    public void setTenKhachHang(String tenKhachHang) { this.tenKhachHang = tenKhachHang; }
+    public void setMaKH(int maKH) {
+        this.maKH = maKH;
+    }
 
-    public String getSoDienThoai() { return soDienThoai; }
-    public void setSoDienThoai(String soDienThoai) { this.soDienThoai = soDienThoai; }
+    public String getTenKH() {
+        return tenKH;
+    }
 
-    public int getDiemTichLuy() { return diemTichLuy; }
-    public void setDiemTichLuy(int diemTichLuy) { this.diemTichLuy = diemTichLuy; }
+    public void setTenKH(String tenKH) {
+        this.tenKH = tenKH;
+    }
 
-    public BigDecimal getTongChiTieu() { return tongChiTieu; }
-    public void setTongChiTieu(BigDecimal tongChiTieu) { this.tongChiTieu = tongChiTieu; }
+    public String getSoDienThoai() {
+        return soDienThoai;
+    }
+
+    public void setSoDienThoai(String soDienThoai) {
+        this.soDienThoai = soDienThoai;
+    }
+
+    public Integer getDiemTichLuy() {
+        return diemTichLuy;
+    }
+
+    public void setDiemTichLuy(Integer diemTichLuy) {
+        this.diemTichLuy = diemTichLuy;
+    }
+
+    public BigDecimal getTongChiTieu() {
+        return tongChiTieu;
+    }
+
+    public void setTongChiTieu(BigDecimal tongChiTieu) {
+        this.tongChiTieu = tongChiTieu;
+    }
 
     @Override
     public String toString() {
-        return tenKhachHang + (soDienThoai == null || soDienThoai.isEmpty() ? "" : " - " + soDienThoai);
+        return tenKH;
     }
 }

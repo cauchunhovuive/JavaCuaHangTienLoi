@@ -2,16 +2,15 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -26,6 +25,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
 import dao.NhaCungCapDAO;
+import dao.NhanVienDAO;
 import dao.PhieuNhapHangDAO;
 import dao.SanPhamDAO;
 import entities.ChiTietNhapHang;
@@ -35,7 +35,6 @@ import entities.PhieuNhapHang;
 import entities.SanPham;
 import entities.TaiKhoan;
 
-/** Màn nhập hàng: tạo phiếu nhập từ nhà cung cấp → cộng tồn kho, cập nhật giá vốn. */
 public class frmNhapHang extends JPanel {
     private static final long serialVersionUID = 1L;
 
@@ -44,19 +43,25 @@ public class frmNhapHang extends JPanel {
     private final PhieuNhapHangDAO phieuDAO = new PhieuNhapHangDAO();
     private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
     private final NhaCungCapDAO nccDAO = new NhaCungCapDAO();
+    private final NhanVienDAO nhanVienDAO = new NhanVienDAO();
 
-    // Chi tiết phiếu nhập đang soạn: [TenSP, DonViTinh, SoLuong, DonGiaNhap, ThanhTien, MaSP, GiaVonHienTai]
     private final List<Object[]> chiTiet = new ArrayList<>();
 
     private JComboBox<NhaCungCap> cbNhaCungCap;
     private JComboBox<SanPham> cbSanPham;
     private JTextField txtSoLuong;
     private JTextField txtDonGia;
+    private JTextField txtGhiChu;
     private DefaultTableModel modelChiTiet;
     private DefaultTableModel modelPhieu;
     private JLabel lblTong;
-    private JTextField txtGhiChu;
     private List<PhieuNhapHang> dsPhieu;
+
+    private final Map<Integer, String> tenNCC = new HashMap<>();
+    private final Map<Integer, String> tenNhanVien = new HashMap<>();
+    private final Map<Integer, String> tenSanPham = new HashMap<>();
+
+    private static final java.text.SimpleDateFormat FMT_NGAY = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
 
     public frmNhapHang(TaiKhoan tk, NhanVien nv) {
         this.taiKhoan = tk;
@@ -73,7 +78,6 @@ public class frmNhapHang extends JPanel {
         lblTieuDe.setFont(new Font("SansSerif", Font.BOLD, 20));
         lblTieuDe.setForeground(new Color(0, 102, 51));
 
-        // ----- Thêm dòng chi tiết -----
         cbNhaCungCap = new JComboBox<>();
         cbSanPham = new JComboBox<>();
         txtSoLuong = new JTextField(5);
@@ -84,7 +88,6 @@ public class frmNhapHang extends JPanel {
         btnThemDong.setFocusPainted(false);
         btnThemDong.addActionListener(e -> themDong());
 
-        // Chọn NCC → combo sản phẩm chỉ hiện SP của NCC đó
         cbNhaCungCap.addActionListener(e -> locSanPhamTheoNCC());
 
         JPanel pnlThem = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
@@ -104,7 +107,6 @@ public class frmNhapHang extends JPanel {
         pnlTren.add(lblTieuDe, BorderLayout.NORTH);
         pnlTren.add(pnlThem, BorderLayout.CENTER);
 
-        // ----- Bảng chi tiết phiếu -----
         modelChiTiet = new DefaultTableModel(
                 new Object[]{"Tên sản phẩm", "ĐVT", "SL", "Giá nhập", "Thành tiền", "MãSP"}, 0) {
             private static final long serialVersionUID = 1L;
@@ -171,7 +173,7 @@ public class frmNhapHang extends JPanel {
 
         // ----- Lịch sử phiếu nhập -----
         modelPhieu = new DefaultTableModel(
-                new Object[]{"Mã phiếu", "Ngày nhập", "Nhà cung cấp", "Người nhập", "Tổng tiền", "Ghi chú"}, 0) {
+                new Object[]{"Mã phiếu", "Ngày nhập", "Nhà cung cấp", "Người nhập", "Tổng tiền", "Ghi chú", "Trạng thái"}, 0) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -187,7 +189,7 @@ public class frmNhapHang extends JPanel {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getClickCount() == 2 && bangPhieu.getSelectedRow() >= 0) {
-                    xemChiTiet(dsPhieu.get(bangPhieu.getSelectedRow()).getMaPhieuNhap());
+                    xemChiTiet(dsPhieu.get(bangPhieu.getSelectedRow()).getMaPN());
                 }
             }
         });
@@ -203,13 +205,25 @@ public class frmNhapHang extends JPanel {
 
     /** Nạp dữ liệu (gọi khi vào màn). */
     public void taiDuLieu() {
-        // Nhà cung cấp
+        napTen();
         cbNhaCungCap.removeAllItems();
         for (NhaCungCap ncc : nccDAO.getAllNhaCungCap()) {
             cbNhaCungCap.addItem(ncc);
         }
         locSanPhamTheoNCC();
         taiLichSuPhieu();
+    }
+
+    /** Nạp tên NCC / nhân viên / sản phẩm để hiển thị thay cho mã. */
+    private void napTen() {
+        tenNCC.clear();
+        for (NhaCungCap ncc : nccDAO.getAllNhaCungCap()) tenNCC.put(ncc.getMaNCC(), ncc.getTenNCC());
+        tenNhanVien.clear();
+        for (NhanVien nv : nhanVienDAO.getAllNhanVien()) {
+            tenNhanVien.put(nv.getMaNV(), (nv.getHo() + " " + nv.getTen()).trim());
+        }
+        tenSanPham.clear();
+        for (SanPham sp : sanPhamDAO.getAll()) tenSanPham.put(sp.getMaSP(), sp.getTenSP());
     }
 
     /** Lọc combo sản phẩm theo nhà cung cấp đang chọn. */
@@ -225,15 +239,15 @@ public class frmNhapHang extends JPanel {
     private void taiLichSuPhieu() {
         modelPhieu.setRowCount(0);
         dsPhieu = phieuDAO.dsPhieuNhap();
-        java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
         for (PhieuNhapHang pn : dsPhieu) {
             modelPhieu.addRow(new Object[]{
-                    pn.getMaPhieuNhap(),
-                    fmt.format(pn.getNgayNhap()),
-                    pn.getNhaCungCap() == null ? "" : pn.getNhaCungCap().getTenNCC(),
-                    pn.getNhanVien() == null ? "" : pn.getNhanVien().getTen(),
-                    String.format("%,.0f", pn.getTongTienNhap()),
-                    pn.getGhiChu() == null ? "" : pn.getGhiChu()
+                    pn.getMaPN(),
+                    pn.getNgayNhap() == null ? "" : FMT_NGAY.format(pn.getNgayNhap()),
+                    pn.getMaNCC() == null ? "" : tenNCC.getOrDefault(pn.getMaNCC(), ""),
+                    pn.getMaNV() == null ? "" : tenNhanVien.getOrDefault(pn.getMaNV(), ""),
+                    String.format("%,.0f", pn.getTongTien() == null ? BigDecimal.ZERO : pn.getTongTien()),
+                    pn.getGhiChu() == null ? "" : pn.getGhiChu(),
+                    pn.getTrangThai() == null ? "" : pn.getTrangThai()
             });
         }
     }
@@ -262,7 +276,7 @@ public class frmNhapHang extends JPanel {
 
         // Cập nhật dòng đã có (cộng dồn) hoặc thêm mới
         for (int i = 0; i < chiTiet.size(); i++) {
-            if ((int) chiTiet.get(i)[5] == sp.getMaSanPham()) {
+            if ((int) chiTiet.get(i)[5] == sp.getMaSP()) {
                 chiTiet.get(i)[2] = (int) chiTiet.get(i)[2] + sl;
                 chiTiet.get(i)[3] = giaNhap;
                 capNhatThanhTien(i);
@@ -274,9 +288,9 @@ public class frmNhapHang extends JPanel {
             }
         }
         BigDecimal thanhTien = giaNhap.multiply(BigDecimal.valueOf(sl));
-        chiTiet.add(new Object[]{ sp.getTenSanPham(), sp.getDonViTinh(), sl, giaNhap, thanhTien, sp.getMaSanPham() });
-        modelChiTiet.addRow(new Object[]{ sp.getTenSanPham(), sp.getDonViTinh(), sl,
-                String.format("%,.0f", giaNhap), String.format("%,.0f", thanhTien), sp.getMaSanPham() });
+        chiTiet.add(new Object[]{ sp.getTenSP(), sp.getDonViTinh(), sl, giaNhap, thanhTien, sp.getMaSP() });
+        modelChiTiet.addRow(new Object[]{ sp.getTenSP(), sp.getDonViTinh(), sl,
+                String.format("%,.0f", giaNhap), String.format("%,.0f", thanhTien), sp.getMaSP() });
         tongCong();
         txtSoLuong.setText("");
         txtDonGia.setText("");
@@ -307,73 +321,88 @@ public class frmNhapHang extends JPanel {
     }
 
     private void taoPhieuNhap() {
+        System.out.println("[frmNhapHang] taoPhieuNhap() called");
         if (chiTiet.isEmpty()) {
+            System.out.println("[frmNhapHang] chiTiet.isEmpty() -> return");
             JOptionPane.showMessageDialog(this, "Chưa có dòng hàng nào.");
             return;
         }
         NhaCungCap ncc = (NhaCungCap) cbNhaCungCap.getSelectedItem();
         if (ncc == null) {
+            System.out.println("[frmNhapHang] ncc == null -> return");
             JOptionPane.showMessageDialog(this, "Chọn nhà cung cấp.");
             return;
         }
         if (nhanVien == null) {
+            System.out.println("[frmNhapHang] nhanVien == null -> return");
             JOptionPane.showMessageDialog(this, "Tài khoản chưa gắn nhân viên. Liên hệ quản lý.",
                     "Không thể nhập", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
+        System.out.println("[frmNhapHang] ncc=" + ncc.getMaNCC() + "/" + ncc.getTenNCC()
+            + ", nhanVien=" + nhanVien.getMaNV()
+            + ", tongTien=" + tongTien()
+            + ", chiTiet size=" + chiTiet.size());
+
         int chon = JOptionPane.showConfirmDialog(this,
                 String.format("Lập phiếu nhập tổng %,.0f đ từ \"%s\"?\nTồn kho sẽ được cộng ngay.",
                         tongTien(), ncc.getTenNCC()),
                 "Xác nhận nhập hàng", JOptionPane.YES_NO_OPTION);
+        System.out.println("[frmNhapHang] user selected: " + (chon == JOptionPane.YES_OPTION ? "YES" : "NO/CANCEL"));
         if (chon != JOptionPane.YES_OPTION) return;
 
         PhieuNhapHang pn = new PhieuNhapHang();
-        pn.setNgayNhap(java.util.Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()));
-        pn.setNhaCungCap(ncc);
-        pn.setNhanVien(nhanVien);
-        pn.setTongTienNhap(tongTien());
+        pn.setNgayNhap(new Timestamp(System.currentTimeMillis()));
+        pn.setMaNCC(ncc.getMaNCC());
+        pn.setMaNV(nhanVien.getMaNV());
+        pn.setTongTien(tongTien());
         pn.setGhiChu(txtGhiChu.getText().trim());
+        pn.setTrangThai("HOAN_TAT");
 
         List<ChiTietNhapHang> dsCT = new ArrayList<>();
         for (Object[] d : chiTiet) {
-            ChiTietNhapHang ct = new ChiTietNhapHang();
-            PhieuNhapHang pnRef = new PhieuNhapHang();
-            pnRef.setMaPhieuNhap(0);
-            ct.setPhieuNhap(pnRef);
-            SanPham sp = new SanPham();
-            sp.setMaSanPham((int) d[5]);
-            ct.setSanPham(sp);
-            ct.setSoLuong((int) d[2]);
-            ct.setDonGiaNhap((BigDecimal) d[3]);
-            dsCT.add(ct);
+            dsCT.add(new ChiTietNhapHang(0, (int) d[5], (int) d[2], (BigDecimal) d[3]));
         }
 
-        int maPN = phieuDAO.taoPhieuNhap(pn, dsCT);
-        if (maPN < 0) {
-            JOptionPane.showMessageDialog(this, "Lập phiếu thất bại. Đã hủy toàn bộ thay đổi.",
+        try {
+            System.out.println("[frmNhapHang] calling phieuDAO.taoPhieuNhap()...");
+            int maPN = phieuDAO.taoPhieuNhap(pn, dsCT);
+            System.out.println("[frmNhapHang] phieuDAO returned: " + maPN);
+            if (maPN < 0) {
+                JOptionPane.showMessageDialog(this, "Lập phiếu thất bại. Đã hủy toàn bộ thay đổi.",
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
+                return;
+            }
+            JOptionPane.showMessageDialog(this, "Đã lập phiếu nhập #" + maPN + " thành công!");
+            donPhieu();
+            taiDuLieu();
+        } catch (Exception e) {
+            String msg = e.getMessage();
+            if (msg == null || msg.isEmpty()) msg = e.getClass().getName();
+            StringBuilder sb = new StringBuilder("Lập phiếu thất bại: " + msg + "\n\n");
+            sb.append("Stack trace:\n");
+            for (StackTraceElement ste : e.getStackTrace()) {
+                sb.append(ste.toString()).append("\n");
+            }
+            JOptionPane.showMessageDialog(this, sb.toString(),
+                "Lỗi", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
-
-        JOptionPane.showMessageDialog(this, "Đã lập phiếu nhập #" + maPN + " thành công!");
-        donPhieu();
-        taiDuLieu();
     }
 
     private void xemChiTiet(int maPN) {
         List<ChiTietNhapHang> ds = phieuDAO.getChiTietByMaPN(maPN);
         StringBuilder sb = new StringBuilder("CHI TIẾT PHIẾU NHẬP #" + maPN + "\n\n");
-        java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
         PhieuNhapHang pn = phieuDAO.getByMaPN(maPN);
         if (pn != null) {
-            sb.append("Ngày: ").append(fmt.format(pn.getNgayNhap())).append("\n");
+            sb.append("Ngày: ").append(pn.getNgayNhap() == null ? "" : FMT_NGAY.format(pn.getNgayNhap())).append("\n");
             sb.append("Nhà cung cấp: ")
-              .append(pn.getNhaCungCap() == null ? "?" : pn.getNhaCungCap().getTenNCC()).append("\n\n");
+              .append(pn.getMaNCC() == null ? "?" : tenNCC.getOrDefault(pn.getMaNCC(), "?")).append("\n\n");
         }
         for (ChiTietNhapHang ct : ds) {
             sb.append(String.format("- %s x %d @ %,.0f = %,.0f đ%n",
-                    ct.getSanPham().getTenSanPham(), ct.getSoLuong(),
+                    tenSanPham.getOrDefault(ct.getMaSP(), "SP #" + ct.getMaSP()), ct.getSoLuong(),
                     ct.getDonGiaNhap(), ct.getThanhTien()));
         }
         JOptionPane.showMessageDialog(this, sb.toString());

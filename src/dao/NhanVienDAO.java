@@ -120,7 +120,7 @@ public class NhanVienDAO {
                 stmtNV.setString(4, nv.getGioiTinh());
                 stmtNV.setString(5, nv.getCmnd());
                 stmtNV.setString(6, nv.getSoDienThoai());
-                stmtNV.setInt(7, nv.getMaDiaChi());
+                stmtNV.setObject(7, nv.getMaDiaChi(), java.sql.Types.INTEGER);
                 stmtNV.setString(8, nv.getTenTaiKhoan());
                 stmtNV.setString(9, nv.getLoaiNV());
                 stmtNV.setString(10, nv.getTrangThai());
@@ -154,7 +154,7 @@ public class NhanVienDAO {
             stmt.setString(4, nv.getGioiTinh());
             stmt.setString(5, nv.getCmnd());
             stmt.setString(6, nv.getSoDienThoai());
-            stmt.setInt(7, nv.getMaDiaChi());
+            stmt.setObject(7, nv.getMaDiaChi(), java.sql.Types.INTEGER);
             stmt.setString(8, nv.getTenTaiKhoan());
             stmt.setString(9, nv.getLoaiNV());
             stmt.setString(10, nv.getTrangThai());
@@ -192,7 +192,8 @@ public class NhanVienDAO {
         nv.setGioiTinh(rs.getString("GioiTinh"));
         nv.setCmnd(rs.getString("CMND"));
         nv.setSoDienThoai(rs.getString("SoDienThoai"));
-        nv.setMaDiaChi(rs.getInt("MaDiaChi"));
+        int maDiaChi = rs.getInt("MaDiaChi");
+        nv.setMaDiaChi(rs.wasNull() ? null : maDiaChi);
         nv.setTenTaiKhoan(rs.getString("TenTaiKhoan"));
         nv.setLoaiNV(rs.getString("LoaiNV"));
         nv.setTrangThai(rs.getString("TrangThai"));

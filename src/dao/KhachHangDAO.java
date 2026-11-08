@@ -14,11 +14,13 @@ import entities.KhachHang;
 public class KhachHangDAO {
 
     private KhachHang map(ResultSet rs) throws SQLException {
+        int diem = rs.getInt("DiemTichLuy");
+        Integer diemTichLuy = rs.wasNull() ? null : diem;
         return new KhachHang(
                 rs.getInt("MaKH"),
                 rs.getString("TenKH"),
                 rs.getString("SoDienThoai"),
-                rs.getInt("DiemTichLuy"),
+                diemTichLuy,
                 rs.getBigDecimal("TongChiTieu"));
     }
 
@@ -52,9 +54,9 @@ public class KhachHangDAO {
         String sql = "INSERT INTO KhachHang (TenKH, SoDienThoai, DiemTichLuy, TongChiTieu) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, kh.getTenKhachHang());
+            ps.setString(1, kh.getTenKH());
             ps.setString(2, kh.getSoDienThoai());
-            ps.setInt(3, kh.getDiemTichLuy());
+            ps.setInt(3, kh.getDiemTichLuy() == null ? 0 : kh.getDiemTichLuy());
             ps.setBigDecimal(4, kh.getTongChiTieu() == null ? BigDecimal.ZERO : kh.getTongChiTieu());
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -67,7 +69,7 @@ public class KhachHangDAO {
         String sql = "UPDATE KhachHang SET DiemTichLuy = DiemTichLuy + ?, TongChiTieu = TongChiTieu + ? WHERE MaKH = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, diem);
-            ps.setBigDecimal(2, thanhTien);
+            ps.setBigDecimal(2, thanhTien == null ? BigDecimal.ZERO : thanhTien);
             ps.setInt(3, maKH);
             ps.executeUpdate();
         }

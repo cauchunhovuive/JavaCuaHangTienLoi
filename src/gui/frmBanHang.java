@@ -235,7 +235,7 @@ public class frmBanHang extends JPanel {
 
         SanPham sp = sanPhamDAO.getByMaVach(tuKhoa);
         if (sp != null) {
-            themVaoGio(sp.getMaSanPham());
+            themVaoGio(sp.getMaSP());
             txtMaVach.setText("");
             return;
         }
@@ -244,22 +244,21 @@ public class frmBanHang extends JPanel {
         if (ds.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Không tìm thấy sản phẩm với từ khóa: " + tuKhoa,
                     "Không tìm thấy", JOptionPane.WARNING_MESSAGE);
-        } else if (ds.size() == 1) {
-            themVaoGio(ds.get(0).getMaSanPham());
+        } else if (ds.size() == 1) {                themVaoGio(ds.get(0).getMaSP());
             txtMaVach.setText("");
         } else {
             SanPham chon = (SanPham) JOptionPane.showInputDialog(this,
                     "Chọn sản phẩm cần thêm vào giỏ:", "Nhiều kết quả",
                     JOptionPane.QUESTION_MESSAGE, null, ds.toArray(), ds.get(0));
             if (chon != null) {
-                themVaoGio(chon.getMaSanPham());
+                themVaoGio(chon.getMaSP());
                 txtMaVach.setText("");
             }
         }
     }
 
     public void themSanPhamVaoGio(SanPham sp) {
-        if (sp != null) themVaoGio(sp.getMaSanPham());
+        if (sp != null) themVaoGio(sp.getMaSP());
     }
 
     private void themVaoGio(int maSP) {
@@ -288,11 +287,11 @@ public class frmBanHang extends JPanel {
             }
         }
 
-        gioHang.add(new Object[]{ sp.getTenSanPham(), sp.getDonViTinh(),
-                sp.getGiaBan(), 1, sp.getGiaBan(), sp.getMaSanPham() });
+        gioHang.add(new Object[]{ sp.getTenSP(), sp.getDonViTinh(),
+                sp.getGiaBan(), 1, sp.getGiaBan(), sp.getMaSP() });
         String giaBanHienThi = String.format("%,.0f", sp.getGiaBan());
-        modelGioHang.addRow(new Object[]{ sp.getTenSanPham(), sp.getDonViTinh(),
-                giaBanHienThi, 1, giaBanHienThi, sp.getMaSanPham() });
+        modelGioHang.addRow(new Object[]{ sp.getTenSP(), sp.getDonViTinh(),
+                giaBanHienThi, 1, giaBanHienThi, sp.getMaSP() });
         tongCong();
     }
 
@@ -334,7 +333,7 @@ public class frmBanHang extends JPanel {
             }
         }
         khachHang = kh;
-        lblKhachHang.setText(kh.getTenKhachHang() + " (" + kh.getDiemTichLuy() + " điểm)");
+        lblKhachHang.setText(kh.getTenKH() + " (" + kh.getDiemTichLuy() + " điểm)");
     }
 
     private void thanhToan() {
@@ -383,18 +382,18 @@ public class frmBanHang extends JPanel {
         }
 
         int diemTang = 0;
-        boolean khThanhVien = khachHang != null && khachHang.getMaKhachHang() > 0;
+        boolean khThanhVien = khachHang != null && khachHang.getMaKH() > 0;
         if (khThanhVien) {
-            diemTang = tong.divideToIntegralValue(new BigDecimal(10000)).intValue();
+            diemTang = tong.divideToIntegralValue(BigDecimal.valueOf(10000)).intValue();
         }
 
         HoaDon hd = new HoaDon();
-        hd.setNgayLap(java.util.Date.from(LocalDateTime.now().atZone(java.time.ZoneId.systemDefault()).toInstant()));
-        hd.setNhanVien(nhanVien);
-        hd.setKhachHang(khachHang);
+        hd.setNgayLap(new java.sql.Timestamp(System.currentTimeMillis()));
+        hd.setMaNV(nhanVien.getMaNV());
+        hd.setMaKH(khThanhVien ? khachHang.getMaKH() : null);
         hd.setTienKhachDua(tienKhachDua);
         hd.setTienThua(tienThua);
-        hd.setDiemDuocTang(diemTang);
+        hd.setDiemTang(diemTang);
         hd.setTrangThai("HOAN_TAT");
         hd.setHinhThucThanhToan(chuyenKhoan ? "CHUYEN_KHOAN" : "TIEN_MAT");
 
@@ -407,7 +406,7 @@ public class frmBanHang extends JPanel {
 
             int maHD = hoaDonDAO.taoHoaDon(conn, hd);
             if (maHD < 0) throw new IllegalStateException("Không tạo được hóa đơn");
-            hd.setMaHoaDon(maHD);
+            hd.setMaHD(maHD);
 
             for (int i = 0; i < gioHang.size(); i++) {
                 Object[] d = gioHang.get(i);
@@ -418,19 +417,12 @@ public class frmBanHang extends JPanel {
                     throw new IllegalStateException("Sản phẩm không đủ tồn kho: " + d[0]);
                 }
 
-                ChiTietHoaDon ct = new ChiTietHoaDon();
-                ct.setHoaDon(hd);
-                SanPham sp = new SanPham();
-                sp.setMaSanPham(maSP);
-                ct.setSanPham(sp);
-                ct.setSoLuong(sl);
-                ct.setDonGia((BigDecimal) d[2]);
+                ChiTietHoaDon ct = new ChiTietHoaDon(maHD, maSP, sl, (BigDecimal) d[2]);
                 chiTietDAO.them(conn, ct);
-                hd.getChiTiet().add(ct);
             }
 
             if (khThanhVien) {
-                khachHangDAO.congDiem(conn, khachHang.getMaKhachHang(), diemTang, tong);
+                khachHangDAO.congDiem(conn, khachHang.getMaKH(), diemTang, tong);
             }
 
             conn.commit();
@@ -450,6 +442,7 @@ public class frmBanHang extends JPanel {
 
         List<Object[]> snapshot = new ArrayList<>();
         for (Object[] d : gioHang) snapshot.add(d.clone());
+        String tenKHBill = khThanhVien ? khachHang.getTenKH() : "Khách lẻ";
 
         gioHang.clear();
         modelGioHang.setRowCount(0);
@@ -459,7 +452,8 @@ public class frmBanHang extends JPanel {
         taiDuLieu(); 
 
         java.awt.Window owner = javax.swing.SwingUtilities.getWindowAncestor(this);
-        frmInHoaDon bill = new frmInHoaDon(owner, hd, snapshot);
+        String tenNV = (nhanVien.getHo() + " " + nhanVien.getTen()).trim();
+        frmInHoaDon bill = new frmInHoaDon(owner, hd, snapshot, tenNV, tenKHBill);
         bill.setVisible(true);
     }
 }

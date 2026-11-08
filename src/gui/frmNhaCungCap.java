@@ -185,7 +185,7 @@ public class frmNhaCungCap extends JPanel {
         JTextField txtEmail = new JTextField(ncc.getEmail());
 
         JLabel lblMaDiaChi = new JLabel("Mã Địa Chỉ:");
-        JTextField txtMaDiaChi = new JTextField(String.valueOf(ncc.getMaDiaChi()));
+        JTextField txtMaDiaChi = new JTextField(ncc.getMaDiaChi() == null ? "" : String.valueOf(ncc.getMaDiaChi()));
 
         JLabel lblTrangThai = new JLabel("Trạng Thái:");
         JComboBox<String> cbTrangThai = new JComboBox<>(new String[]{"Hoạt động", "Tạm dừng"});
@@ -217,9 +217,10 @@ public class frmNhaCungCap extends JPanel {
                 ncc.setTenNCC(txtTenNCC.getText());
                 ncc.setSoDienThoai(txtSoDienThoai.getText());
                 ncc.setEmail(txtEmail.getText());
-                ncc.setMaDiaChi(Integer.parseInt(txtMaDiaChi.getText()));
+                String maDiaChiSua = txtMaDiaChi.getText().trim();
+                ncc.setMaDiaChi(maDiaChiSua.isEmpty() ? null : Integer.parseInt(maDiaChiSua));
                 ncc.setTrangThai((String) cbTrangThai.getSelectedItem());
-                ncc.setNgayTao(Timestamp.valueOf(LocalDate.now().atStartOfDay()));
+                ncc.setNgayTao(new Timestamp(System.currentTimeMillis()));
 
                 if (nhaCungCapDAO.updateNhaCungCap(ncc)) {
                     JOptionPane.showMessageDialog(dialog, "Cập nhật thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
@@ -268,10 +269,8 @@ public class frmNhaCungCap extends JPanel {
     JComboBox<String> cbTrangThai = new JComboBox<>(new String[]{"Hoạt động", "Tạm dừng"});
     
     JLabel lblNgayTao = new JLabel("Ngày Tạo:");
-    Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());  // Lấy thời gian hiện tại
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"); // Định dạng ngày giờ
-
-    JTextField txtNgayTao = new JTextField(timestamp.toLocalDateTime().format(formatter));
+    JTextField txtNgayTao = new JTextField(
+            new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Timestamp(System.currentTimeMillis())));
     // Thêm các label và textfield vào panel
     panel.add(lblTenNCC);
     panel.add(txtTenNCC);
@@ -298,7 +297,7 @@ public class frmNhaCungCap extends JPanel {
         String ngayTaoStr = txtNgayTao.getText().trim();
         
         // Kiểm tra tính hợp lệ của dữ liệu đầu vào
-        if (tenNCC.isEmpty() || soDienThoai.isEmpty() || email.isEmpty() || maDiaChi.isEmpty() || ngayTaoStr.isEmpty()) {
+        if (tenNCC.isEmpty() || soDienThoai.isEmpty() || email.isEmpty() || ngayTaoStr.isEmpty()) {
             JOptionPane.showMessageDialog(dialog, "Vui lòng điền đầy đủ thông tin!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -315,20 +314,22 @@ public class frmNhaCungCap extends JPanel {
             return;
         }
         
-        // Kiểm tra mã địa chỉ là số
-        int maDiaChiInt = 0;
-        try {
-            maDiaChiInt = Integer.parseInt(maDiaChi);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(dialog, "Mã địa chỉ phải là số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
+        // Mã địa chỉ là tùy chọn (cột MaDiaChi cho phép NULL)
+        Integer maDiaChiInt = null;
+        if (!maDiaChi.isEmpty()) {
+            try {
+                maDiaChiInt = Integer.parseInt(maDiaChi);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Mã địa chỉ phải là số!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
         }
         
         // Kiểm tra định dạng ngày tạo
-        LocalDateTime ngayTao = null;
+        Timestamp ngayTao;
         try {
-            ngayTao = LocalDateTime.parse(ngayTaoStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        } catch (DateTimeParseException ex) {
+            ngayTao = Timestamp.valueOf(ngayTaoStr);
+        } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(dialog, "Ngày tạo không hợp lệ. Vui lòng nhập theo định dạng yyyy-MM-dd!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -340,7 +341,7 @@ public class frmNhaCungCap extends JPanel {
         ncc.setEmail(email);
         ncc.setMaDiaChi(maDiaChiInt);
         ncc.setTrangThai(trangThai);
-        ncc.setNgayTao(Timestamp.valueOf(ngayTao));
+        ncc.setNgayTao(ngayTao);
         
         if (nhaCungCapDAO.addNhaCungCap(ncc)) {
 		    JOptionPane.showMessageDialog(dialog, "Nhà cung cấp đã được thêm thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);

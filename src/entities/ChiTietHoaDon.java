@@ -2,36 +2,57 @@ package entities;
 
 import java.math.BigDecimal;
 
-/** Chi tiết hóa đơn: 1 dòng = 1 sản phẩm + số lượng + đơn giá. */
 public class ChiTietHoaDon {
-    private HoaDon hoaDon;
-    private SanPham sanPham;
+    private int maHD;
+    private int maSP;
     private int soLuong;
     private BigDecimal donGia;
 
     public ChiTietHoaDon() {
     }
 
-    public ChiTietHoaDon(HoaDon hoaDon, SanPham sanPham, int soLuong, BigDecimal donGia) {
-        this.hoaDon = hoaDon;
-        this.sanPham = sanPham;
+    public ChiTietHoaDon(int maHD, int maSP, int soLuong, BigDecimal donGia) {
+        this.maHD = maHD;
+        this.maSP = maSP;
         this.soLuong = soLuong;
         this.donGia = donGia;
     }
 
-    public HoaDon getHoaDon() { return hoaDon; }
-    public void setHoaDon(HoaDon hoaDon) { this.hoaDon = hoaDon; }
+    public int getMaHD() {
+        return maHD;
+    }
 
-    public SanPham getSanPham() { return sanPham; }
-    public void setSanPham(SanPham sanPham) { this.sanPham = sanPham; }
+    public void setMaHD(int maHD) {
+        this.maHD = maHD;
+    }
 
-    public int getSoLuong() { return soLuong; }
-    public void setSoLuong(int soLuong) { this.soLuong = soLuong; }
+    public int getMaSP() {
+        return maSP;
+    }
 
-    public BigDecimal getDonGia() { return donGia; }
-    public void setDonGia(BigDecimal donGia) { this.donGia = donGia; }
+    public void setMaSP(int maSP) {
+        this.maSP = maSP;
+    }
 
+    public int getSoLuong() {
+        return soLuong;
+    }
+
+    public void setSoLuong(int soLuong) {
+        this.soLuong = soLuong;
+    }
+
+    public BigDecimal getDonGia() {
+        return donGia;
+    }
+
+    public void setDonGia(BigDecimal donGia) {
+        this.donGia = donGia;
+    }
+
+    /** Thuộc tính dẫn xuất: số lượng × đơn giá (không phải cột trong CSDL). */
     public BigDecimal getThanhTien() {
+        if (donGia == null) return BigDecimal.ZERO;
         return donGia.multiply(BigDecimal.valueOf(soLuong));
     }
 }

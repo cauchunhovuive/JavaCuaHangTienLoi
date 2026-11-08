@@ -6,11 +6,9 @@ public class LoaiSanPham {
     private String moTa;
     private String icon;
 
-    // Constructor mặc định
     public LoaiSanPham() {
     }
 
-    // Constructor với đầy đủ tham số
     public LoaiSanPham(int maLoai, String tenLoai, String moTa, String icon) {
         this.maLoai = maLoai;
         this.tenLoai = tenLoai;
@@ -18,7 +16,12 @@ public class LoaiSanPham {
         this.icon = icon;
     }
 
-    // Getter và Setter
+    public LoaiSanPham(String tenLoai, String moTa, String icon) {
+        this.tenLoai = tenLoai;
+        this.moTa = moTa;
+        this.icon = icon;
+    }
+
     public int getMaLoai() {
         return maLoai;
     }
@@ -48,12 +51,12 @@ public class LoaiSanPham {
     }
 
     public void setIcon(String icon) {
-        this.icon = icon; // Đã thêm dòng này để gán giá trị
+        this.icon = icon;
     }
 
-    // Hiển thị tên loại trong JComboBox (thay vì dump thuộc tính)
     @Override
     public String toString() {
+        // Hiển thị tên loại trong JComboBox
         return tenLoai == null ? "" : tenLoai;
     }
 }

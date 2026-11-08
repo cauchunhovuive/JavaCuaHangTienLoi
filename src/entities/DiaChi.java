@@ -3,27 +3,21 @@ package entities;
 public class DiaChi {
     private int maDiaChi;
     private String soNha;
-    private String tenDuong;
-    private String phuong;
+    private String duong;
     private String quan;
     private String thanhPho;
-    private String quocGia;
 
     public DiaChi() {
     }
 
-    public DiaChi(int maDiaChi, String soNha, String tenDuong, String phuong, 
-                 String quan, String thanhPho, String quocGia) {
+    public DiaChi(int maDiaChi, String soNha, String duong, String quan, String thanhPho) {
         this.maDiaChi = maDiaChi;
         this.soNha = soNha;
-        this.tenDuong = tenDuong;
-        this.phuong = phuong;
+        this.duong = duong;
         this.quan = quan;
         this.thanhPho = thanhPho;
-        this.quocGia = quocGia;
     }
 
-    // Getters and Setters
     public int getMaDiaChi() {
         return maDiaChi;
     }
@@ -40,20 +34,12 @@ public class DiaChi {
         this.soNha = soNha;
     }
 
-    public String getTenDuong() {
-        return tenDuong;
+    public String getDuong() {
+        return duong;
     }
 
-    public void setTenDuong(String tenDuong) {
-        this.tenDuong = tenDuong;
-    }
-
-    public String getPhuong() {
-        return phuong;
-    }
-
-    public void setPhuong(String phuong) {
-        this.phuong = phuong;
+    public void setDuong(String duong) {
+        this.duong = duong;
     }
 
     public String getQuan() {
@@ -72,16 +58,13 @@ public class DiaChi {
         this.thanhPho = thanhPho;
     }
 
-    public String getQuocGia() {
-        return quocGia;
-    }
-
-    public void setQuocGia(String quocGia) {
-        this.quocGia = quocGia;
-    }
-
     @Override
     public String toString() {
-        return soNha + " " + tenDuong + ", " + phuong + ", " + quan + ", " + thanhPho + ", " + quocGia;
+        StringBuilder sb = new StringBuilder();
+        if (soNha != null && !soNha.isEmpty()) sb.append(soNha).append(' ');
+        if (duong != null && !duong.isEmpty()) sb.append(duong);
+        if (quan != null && !quan.isEmpty()) sb.append(", ").append(quan);
+        if (thanhPho != null && !thanhPho.isEmpty()) sb.append(", ").append(thanhPho);
+        return sb.toString();
     }
 }

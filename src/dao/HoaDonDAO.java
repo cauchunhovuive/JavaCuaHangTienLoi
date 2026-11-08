@@ -24,7 +24,7 @@ public class HoaDonDAO {
 
     private HoaDon map(ResultSet rs) throws SQLException {
         HoaDon hd = new HoaDon();
-        hd.setMaHoaDon(rs.getInt("MaHD"));
+        hd.setMaHD(rs.getInt("MaHD"));
         Timestamp ts = rs.getTimestamp("NgayLap");
         hd.setNgayLap(ts);
         NhanVien nv = new NhanVien();
@@ -33,9 +33,9 @@ public class HoaDonDAO {
         nv.setTen(rs.getString("TenNV"));
         hd.setNhanVien(nv);
         KhachHang kh = new KhachHang();
-        kh.setMaKhachHang(rs.getInt("MaKH"));
+        kh.setMaKH(rs.getInt("MaKH"));
         String tenKH = rs.getString("TenKH");
-        kh.setTenKhachHang(tenKH == null ? "Khách lẻ" : tenKH);
+        kh.setTenKH(tenKH == null ? "Khách lẻ" : tenKH);
         hd.setKhachHang(kh);
         hd.setTienKhachDua(rs.getBigDecimal("TienKhachDua"));
         hd.setTienThua(rs.getBigDecimal("TienThua"));
@@ -53,10 +53,6 @@ public class HoaDonDAO {
             "LEFT JOIN NhanVien nv ON hd.MaNV = nv.MaNV " +
             "LEFT JOIN KhachHang kh ON hd.MaKH = kh.MaKH";
 
-    /**
-     * Nạp chi tiết cho các hóa đơn bằng 1 truy vấn.
-     * tongTien là thuộc tính dẫn xuất nên phải có chi tiết mới tính được.
-     */
     private void napChiTiet(Connection conn, List<HoaDon> ds) throws SQLException {
         if (ds.isEmpty()) return;
 
@@ -78,8 +74,8 @@ public class HoaDonDAO {
                     HoaDon hd = theoMa.get(rs.getInt("MaHD"));
                     if (hd == null) continue;
                     SanPham sp = new SanPham();
-                    sp.setMaSanPham(rs.getInt("MaSP"));
-                    hd.getChiTiet().add(new ChiTietHoaDon(hd, sp,
+                    sp.setMaSP(rs.getInt("MaSP"));
+                    hd.getChiTiet().add(new ChiTietHoaDon(hd.getMaHoaDon(), rs.getInt("MaSP"),
                             rs.getInt("SoLuong"), rs.getBigDecimal("DonGia")));
                 }
             }
@@ -91,9 +87,9 @@ public class HoaDonDAO {
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setTimestamp(1, new Timestamp(hd.getNgayLap().getTime()));
-            ps.setInt(2, hd.getNhanVien().getMaNV());
-            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() > 0)
-                ps.setInt(3, hd.getKhachHang().getMaKhachHang());
+            ps.setInt(2, hd.getMaNV() == null ? 0 : hd.getMaNV());
+            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKH() > 0)
+                ps.setInt(3, hd.getKhachHang().getMaKH());
             else ps.setNull(3, java.sql.Types.INTEGER);
             ps.setBigDecimal(4, hd.getTienKhachDua());
             ps.setBigDecimal(5, hd.getTienThua());
@@ -177,5 +173,19 @@ public class HoaDonDAO {
             System.err.println("Lỗi tính doanh thu: " + e.getMessage());
         }
         return BigDecimal.ZERO;
+    }
+
+    public Map<Integer, BigDecimal> tongTienTheoHoaDon(List<HoaDon> ds) {
+        Map<Integer, BigDecimal> result = new HashMap<>();
+        for (HoaDon hd : ds) {
+            BigDecimal tong = BigDecimal.ZERO;
+            if (hd.getChiTiet() != null) {
+                for (ChiTietHoaDon ct : hd.getChiTiet()) {
+                    tong = tong.add(ct.getThanhTien());
+                }
+            }
+            result.put(hd.getMaHD(), tong);
+        }
+        return result;
     }
 }

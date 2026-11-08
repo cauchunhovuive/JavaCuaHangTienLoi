@@ -50,7 +50,7 @@ public class ThongTinCaNhan extends JPanel {
         txtSDT = createTextField(nv.getSoDienThoai(), font);
         txtLoaiNV = createTextField(nv.getLoaiNV(), font);
         txtNgayVaoLam = createTextField(nv.getNgayVaoLam().toString(), font);
-        txtLuong = createTextField(nv.getLuongCoBan().toString(), font);
+        txtLuong = createTextField(String.valueOf(nv.getLuongCoBan()), font);
 
         int y = 0;
         addField(formPanel, gbc, "Mã nhân viên:", txtMaNV, y++);
@@ -116,8 +116,8 @@ public class ThongTinCaNhan extends JPanel {
                 return;
             }
 
-            BigDecimal luong = new BigDecimal(txtLuong.getText());
-            if (luong.compareTo(BigDecimal.ZERO) <= 0) {
+            java.math.BigDecimal luong = new java.math.BigDecimal(txtLuong.getText().trim());
+            if (luong.compareTo(java.math.BigDecimal.ZERO) <= 0) {
                 showMessage("Lương cơ bản phải > 0.");
                 return;
             }

@@ -214,8 +214,14 @@ CREATE TABLE PhieuNhapHang (
     MaNCC     INT REFERENCES NhaCungCap(MaNCC),
     MaNV      INT REFERENCES NhanVien(MaNV),
     TongTien  DECIMAL(15,2) DEFAULT 0,
-    GhiChu    NVARCHAR(255)
+    GhiChu    NVARCHAR(255),
+    TrangThai NVARCHAR(20) DEFAULT N'HOAN_TAT'
 );
+GO
+
+-- Bổ sung cột TrangThai nếu DB được tạo từ phiên bản trước
+IF OBJECT_ID('PhieuNhapHang') IS NOT NULL AND COL_LENGTH('PhieuNhapHang', 'TrangThai') IS NULL
+    ALTER TABLE PhieuNhapHang ADD TrangThai NVARCHAR(20) DEFAULT N'HOAN_TAT';
 GO
 
 IF OBJECT_ID('ChiTietNhapHang') IS NULL
@@ -229,16 +235,32 @@ CREATE TABLE ChiTietNhapHang (
 GO
 
 -- ---------------------------------------------------------------------
+-- DỮ LIỆU MẪU: địa chỉ (được NhaCungCap và NhanVien tham chiếu qua MaDiaChi)
+-- ---------------------------------------------------------------------
+IF NOT EXISTS (SELECT 1 FROM DiaChi)
+BEGIN
+    INSERT INTO DiaChi (SoNha, Duong, Quan, ThanhPho) VALUES
+    (N'10',  N'Trần Não',          N'Quận 2', N'TP. Hồ Chí Minh'),
+    (N'219', N'Nguyễn Trãi',       N'Quận 1', N'TP. Hồ Chí Minh'),
+    (N'1',   N'Lý Thường Kiệt',    N'Quận Tân Bình', N'TP. Hồ Chí Minh'),
+    (N'156', N'Nguyễn Lương Bằng', N'Quận 7', N'TP. Hồ Chí Minh'),
+    (N'12',  N'Mạc Đỉnh Chi',      N'Quận 1', N'TP. Hồ Chí Minh'),
+    (N'5',   N'Cách Mạng Tháng 8', N'Quận 3', N'TP. Hồ Chí Minh'),
+    (N'88',  N'Lê Lợi',            N'Quận 1', N'TP. Hồ Chí Minh');
+END
+GO
+
+-- ---------------------------------------------------------------------
 -- DỮ LIỆU MẪU: nhà cung cấp (cần cho màn nhập hàng)
 -- ---------------------------------------------------------------------
 IF NOT EXISTS (SELECT 1 FROM NhaCungCap)
 BEGIN
-    INSERT INTO NhaCungCap (TenNCC, SoDienThoai, Email, TrangThai) VALUES
-    (N'Vinamilk', '02854155555', 'info@vinamilk.com.vn', N'Active'),
-    (N'Tân Hiệp Phát (Red Bull)', '02743805116', 'thp@tan-hiep-phat.vn', N'Active'),
-    (N'Acecook Việt Nam', '02838154021', 'info@acecook.vn', N'Active'),
-    (N'Unilever Việt Nam', '02838234567', 'consumer@unilever.com.vn', N'Active'),
-    (N'Masan Consumer', '02854132123', 'info@masan.com.vn', N'Active');
+    INSERT INTO NhaCungCap (TenNCC, SoDienThoai, Email, MaDiaChi, TrangThai) VALUES
+    (N'Vinamilk', '02854155555', 'info@vinamilk.com.vn', (SELECT MaDiaChi FROM DiaChi WHERE Duong = N'Trần Não'), N'Active'),
+    (N'Tân Hiệp Phát (Red Bull)', '02743805116', 'thp@tan-hiep-phat.vn', (SELECT MaDiaChi FROM DiaChi WHERE Duong = N'Nguyễn Trãi'), N'Active'),
+    (N'Acecook Việt Nam', '02838154021', 'info@acecook.vn', (SELECT MaDiaChi FROM DiaChi WHERE Duong = N'Lý Thường Kiệt'), N'Active'),
+    (N'Unilever Việt Nam', '02838234567', 'consumer@unilever.com.vn', (SELECT MaDiaChi FROM DiaChi WHERE Duong = N'Nguyễn Lương Bằng'), N'Active'),
+    (N'Masan Consumer', '02854132123', 'info@masan.com.vn', (SELECT MaDiaChi FROM DiaChi WHERE Duong = N'Mạc Đỉnh Chi'), N'Active');
 END
 GO
 
@@ -262,9 +284,13 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM NhanVien)
 BEGIN
-    INSERT INTO NhanVien (Ho, Ten, NgaySinh, GioiTinh, CMND, SoDienThoai, TenTaiKhoan, LoaiNV, TrangThai, NgayVaoLam, LuongCoBan)
-    VALUES (N'Quản', N'Lý', '1990-01-01', N'Nam', '012345678901', '0901000001', 'admin', N'Quản lý', N'Active', '2024-01-01', 8000000),
-           (N'Nhân', N'Viên', '2000-05-05', N'Nữ', '098765432109', '0902000002', 'nhanvien1', N'Bán hàng', N'Active', '2024-06-01', 5000000);
+    INSERT INTO NhanVien (Ho, Ten, NgaySinh, GioiTinh, CMND, SoDienThoai, MaDiaChi, TenTaiKhoan, LoaiNV, TrangThai, NgayVaoLam, LuongCoBan)
+    VALUES (N'Quản', N'Lý', '1990-01-01', N'Nam', '012345678901', '0901000001',
+            (SELECT MaDiaChi FROM DiaChi WHERE Duong = N'Cách Mạng Tháng 8'),
+            'admin', N'Quản lý', N'Active', '2024-01-01', 8000000),
+           (N'Nhân', N'Viên', '2000-05-05', N'Nữ', '098765432109', '0902000002',
+            (SELECT MaDiaChi FROM DiaChi WHERE Duong = N'Lê Lợi'),
+            'nhanvien1', N'Bán hàng', N'Active', '2024-06-01', 5000000);
 END
 GO
 

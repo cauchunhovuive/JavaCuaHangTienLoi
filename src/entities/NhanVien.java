@@ -11,7 +11,7 @@ public class NhanVien {
     private String gioiTinh;
     private String cmnd;
     private String soDienThoai;
-    private int maDiaChi;
+    private Integer maDiaChi;
     private String tenTaiKhoan;
     private String loaiNV;
     private String trangThai;
@@ -22,7 +22,7 @@ public class NhanVien {
     }
 
     public NhanVien(int maNV, String ho, String ten, LocalDate ngaySinh, String gioiTinh,
-                    String cmnd, String soDienThoai, int maDiaChi, String tenTaiKhoan,
+                    String cmnd, String soDienThoai, Integer maDiaChi, String tenTaiKhoan,
                     String loaiNV, String trangThai, LocalDate ngayVaoLam, BigDecimal luongCoBan) {
         this.maNV = maNV;
         this.ho = ho;
@@ -39,7 +39,6 @@ public class NhanVien {
         this.luongCoBan = luongCoBan;
     }
 
-    // Getters và Setters
     public int getMaNV() {
         return maNV;
     }
@@ -96,11 +95,11 @@ public class NhanVien {
         this.soDienThoai = soDienThoai;
     }
 
-    public int getMaDiaChi() {
+    public Integer getMaDiaChi() {
         return maDiaChi;
     }
 
-    public void setMaDiaChi(int maDiaChi) {
+    public void setMaDiaChi(Integer maDiaChi) {
         this.maDiaChi = maDiaChi;
     }
 
@@ -146,6 +145,6 @@ public class NhanVien {
 
     @Override
     public String toString() {
-        return ho + " " + ten + " [Mã: " + maNV + "] - " + loaiNV + " - " + trangThai;
+        return ho + " " + ten;
     }
 }

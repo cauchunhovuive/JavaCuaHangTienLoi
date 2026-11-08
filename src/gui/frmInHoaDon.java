@@ -5,8 +5,7 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
-import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -35,10 +34,13 @@ public class frmInHoaDon extends JDialog {
 
     /**
      * @param hoaDon  hóa đơn vừa ghi (đã có mã)
-     * @param gioHang snapshot giỏ hàng: [TenSP, DonViTinh, DonGia, SoLuong, ThanhTien]
+     * @param gioHang snapshot giỏ hàng: [TenSP, DonViTinh, DonGia, SoLuong, ThanhTien, MaSP]
+     * @param tenNV   tên nhân viên lập hóa đơn
+     * @param tenKH   tên khách hàng ("Khách lẻ" nếu không phải thành viên)
      */
-    public frmInHoaDon(java.awt.Window owner, HoaDon hoaDon, List<Object[]> gioHang) {
-        super(owner, "Hóa đơn #" + hoaDon.getMaHoaDon(), ModalityType.APPLICATION_MODAL);
+    public frmInHoaDon(java.awt.Window owner, HoaDon hoaDon, List<Object[]> gioHang,
+                       String tenNV, String tenKH) {
+        super(owner, "Hóa đơn #" + hoaDon.getMaHD(), ModalityType.APPLICATION_MODAL);
         setSize(620, 780);
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout(10, 10));
@@ -48,37 +50,36 @@ public class frmInHoaDon extends JDialog {
         txtChiTiet.setFont(new Font("Monospaced", Font.PLAIN, 14));
 
         boolean chuyenKhoan = "CHUYEN_KHOAN".equals(hoaDon.getHinhThucThanhToan());
-        SimpleDateFormat fmt = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        java.text.SimpleDateFormat fmt = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm");
         StringBuilder sb = new StringBuilder();
         sb.append("=========== CHI TIẾT HÓA ĐƠN ===========\n");
-        sb.append("Mã hóa đơn: ").append(hoaDon.getMaHoaDon()).append("\n");
-        sb.append("Ngày bán  : ").append(fmt.format(hoaDon.getNgayLap())).append("\n");
+        sb.append("Mã hóa đơn: ").append(hoaDon.getMaHD()).append("\n");
+        sb.append("Ngày bán  : ").append(hoaDon.getNgayLap() == null ? "" : fmt.format(hoaDon.getNgayLap())).append("\n");
         sb.append("----------------------------------------\n");
-        sb.append("Nhân viên : ")
-          .append(hoaDon.getNhanVien() == null ? "" : (hoaDon.getNhanVien().getHo() + " " + hoaDon.getNhanVien().getTen()).trim())
-          .append("\n");
-        sb.append("Khách hàng: ")
-          .append(hoaDon.getKhachHang() == null ? "Khách lẻ" : hoaDon.getKhachHang().getTenKhachHang())
-          .append("\n");
+        sb.append("Nhân viên : ").append(tenNV == null ? "" : tenNV).append("\n");
+        sb.append("Khách hàng: ").append(tenKH == null ? "Khách lẻ" : tenKH).append("\n");
         sb.append("----------------------------------------\n")
           .append(String.format("%-25s %-6s %-10s %-12s\n", "Tên SP", "SL", "Đơn giá", "Thành tiền"))
           .append("------------------------------------------------------------------\n");
 
+        java.math.BigDecimal tong = java.math.BigDecimal.ZERO;
         for (Object[] d : gioHang) {
+            java.math.BigDecimal donGia = (java.math.BigDecimal) d[2];
+            java.math.BigDecimal thanhTien = (java.math.BigDecimal) d[4];
+            tong = tong.add(thanhTien);
             sb.append(String.format("%-25s %-6d %,-10.0f %,-12.0f\n",
-                    d[0], (int) d[3], (BigDecimal) d[2], (BigDecimal) d[4]));
+                    d[0], (int) d[3], donGia, thanhTien));
         }
 
-        BigDecimal tong = hoaDon.getTongTien();
-        BigDecimal khachDua = hoaDon.getTienKhachDua();
-        BigDecimal thua = hoaDon.getTienThua();
         sb.append("------------------------------------------------------------------\n")
           .append(String.format("Hình thức   : %s\n", chuyenKhoan ? "CHUYỂN KHOẢN" : "TIỀN MẶT"))
           .append(String.format("Tổng tiền   : %,.0f VNĐ\n", tong))
-          .append(String.format("Khách đưa   : %,.0f VNĐ\n", khachDua))
-          .append(String.format("Tiền thối    : %,.0f VNĐ\n", thua));
-        if (hoaDon.getDiemDuocTang() > 0) {
-            sb.append("Tích điểm    : ").append(hoaDon.getDiemDuocTang()).append(" điểm\n");
+          .append(String.format("Khách đưa   : %,.0f VNĐ\n",
+                  hoaDon.getTienKhachDua() == null ? java.math.BigDecimal.ZERO : hoaDon.getTienKhachDua()))
+          .append(String.format("Tiền thối    : %,.0f VNĐ\n",
+                  hoaDon.getTienThua() == null ? java.math.BigDecimal.ZERO : hoaDon.getTienThua()));
+        if (hoaDon.getDiemTang() != null && hoaDon.getDiemTang() > 0) {
+            sb.append("Tích điểm    : ").append(hoaDon.getDiemTang()).append(" điểm\n");
         }
         sb.append("========================================\n")
           .append("       CẢM ƠN QUÝ KHÁCH ĐÃ MUA HÀNG!\n");
@@ -92,7 +93,7 @@ public class frmInHoaDon extends JDialog {
         // QR chuyển khoản (như bill cũ: MB Bank)
         if (chuyenKhoan) {
             String thongTin = "MB Bank\nSo tai khoan: 1234567890\nTen: NGUYEN VAN A\nNoi dung: HD"
-                    + hoaDon.getMaHoaDon() + " " + String.format("%,.0f VND", tong).replace(",", ".");
+                    + hoaDon.getMaHD() + " " + String.format("%,.0f VND", tong).replace(",", ".");
             BufferedImage qr = taoQR(thongTin, 200, 200);
             if (qr != null) {
                 JLabel lblQR = new JLabel(new ImageIcon(qr), JLabel.CENTER);

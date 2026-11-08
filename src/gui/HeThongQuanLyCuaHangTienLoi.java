@@ -51,7 +51,7 @@ public class HeThongQuanLyCuaHangTienLoi extends JFrame {
     public HeThongQuanLyCuaHangTienLoi(TaiKhoan tk, NhanVien nv) {
         this.taiKhoan = tk;
         this.nhanVien = nv;
-        this.laQuanLy = tk.getQuyen().getMaQuyen() == 1;
+        this.laQuanLy = tk.getMaQuyen() == 1;
 
         setTitle("Hệ thống quản lý cửa hàng tiện lợi");
         setExtendedState(JFrame.MAXIMIZED_BOTH);

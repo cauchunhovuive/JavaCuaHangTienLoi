@@ -2,12 +2,12 @@ package gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -23,10 +23,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
 import dao.LoaiSanPhamDAO;
-import dao.NhaCungCapDAO;
 import dao.SanPhamDAO;
 import entities.LoaiSanPham;
-import entities.NhaCungCap;
 import entities.SanPham;
 
 /** Quản lý sản phẩm: thêm/sửa/xóa, tìm theo mã vạch/tên, cảnh báo tồn thấp. */
@@ -35,12 +33,12 @@ public class QuanLySanPham extends JPanel {
 
     private final SanPhamDAO sanPhamDAO = new SanPhamDAO();
     private final LoaiSanPhamDAO loaiDAO = new LoaiSanPhamDAO();
-    private final NhaCungCapDAO nccDAO = new NhaCungCapDAO();
 
     private JTextField txtTimKiem;
     private DefaultTableModel model;
     private JTable bang;
     private List<SanPham> dsHienTai;
+    private final Map<Integer, String> tenLoai = new HashMap<>();
 
     public QuanLySanPham() {
         setLayout(new BorderLayout(10, 10));
@@ -94,7 +92,7 @@ public class QuanLySanPham extends JPanel {
 
         model = new DefaultTableModel(
                 new Object[]{"Mã SP", "Mã vạch", "Tên sản phẩm", "Loại", "ĐVT",
-                        "Giá bán", "Giá vốn", "Tồn", "Ngưỡng", "Trạng thái", "Nhà cung cấp"}, 0) {
+                        "Giá bán", "Giá vốn", "Tồn", "Ngưỡng", "Trạng thái"}, 0) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -128,21 +126,30 @@ public class QuanLySanPham extends JPanel {
     }
 
     public void taiDuLieu(String tuKhoa) {
+        // Tra tên loại theo maLoai (sơ đồ dùng khóa ngoại int)
+        tenLoai.clear();
+        try {
+            for (LoaiSanPham l : loaiDAO.getAllLoaiSanPham()) {
+                tenLoai.put(l.getMaLoai(), l.getTenLoai());
+            }
+        } catch (Exception ex) {
+            System.err.println("Lỗi tải loại sản phẩm: " + ex.getMessage());
+        }
+
         dsHienTai = tuKhoa.isEmpty() ? sanPhamDAO.getAll() : sanPhamDAO.timKiem(tuKhoa);
         model.setRowCount(0);
         for (SanPham sp : dsHienTai) {
             model.addRow(new Object[]{
-                    sp.getMaSanPham(),
+                    sp.getMaSP(),
                     sp.getMaVach(),
-                    sp.getTenSanPham(),
-                    sp.getLoaiSanPham() == null ? "" : sp.getLoaiSanPham().getTenLoai(),
+                    sp.getTenSP(),
+                    tenLoai.getOrDefault(sp.getMaLoai(), ""),
                     sp.getDonViTinh(),
                     String.format("%,.0f", sp.getGiaBan()),
-                    String.format("%,.0f", sp.getGiaVon() == null ? BigDecimal.ZERO : sp.getGiaVon()),
+                    String.format("%,.0f", sp.getGiaVon()),
                     sp.getTonKho(),
                     sp.getTonToiThieu(),
-                    sp.isSapHet() ? "SẮP HẾT" : sp.getTrangThai(),
-                    sp.getTenNhaCungCap() == null ? "" : sp.getTenNhaCungCap()
+                    sp.isSapHet() ? "SẮP HẾT" : sp.getTrangThai()
             });
         }
     }
@@ -160,10 +167,10 @@ public class QuanLySanPham extends JPanel {
         SanPham sp = sanPhamDaChon();
         if (sp == null) return;
         int chon = JOptionPane.showConfirmDialog(this,
-                "Xóa sản phẩm \"" + sp.getTenSanPham() + "\"?\n(Lưu ý: sản phẩm đã phát sinh hóa đơn sẽ không xóa được)",
+                "Xóa sản phẩm \"" + sp.getTenSP() + "\"?\n(Lưu ý: sản phẩm đã phát sinh hóa đơn sẽ không xóa được)",
                 "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (chon != JOptionPane.YES_OPTION) return;
-        boolean ok = sanPhamDAO.xoa(sp.getMaSanPham());
+        boolean ok = sanPhamDAO.xoa(sp.getMaSP());
         if (ok) {
             JOptionPane.showMessageDialog(this, "Đã xóa.");
             taiDuLieu();
@@ -178,26 +185,23 @@ public class QuanLySanPham extends JPanel {
     private void moForm(SanPham sp) {
         JDialog dialog = new JDialog(SwingUtilitiesWindow(), sp == null ? "Thêm sản phẩm" : "Sửa sản phẩm");
         dialog.setLayout(new BorderLayout(10, 10));
-        dialog.setSize(420, 480);
+        dialog.setSize(420, 460);
         dialog.setLocationRelativeTo(this);
 
         JPanel form = new JPanel(new GridLayout(0, 2, 8, 10));
         form.setBorder(new EmptyBorder(15, 20, 15, 20));
 
         JTextField txtMaVach = new JTextField(sp == null ? "" : sp.getMaVach());
-        JTextField txtTen = new JTextField(sp == null ? "" : sp.getTenSanPham());
+        JTextField txtTen = new JTextField(sp == null ? "" : sp.getTenSP());
         JComboBox<LoaiSanPham> cbLoai = new JComboBox<>();
-        List<LoaiSanPham> dsLoai;
         try {
-            dsLoai = loaiDAO.getAllLoaiSanPham();
+            for (LoaiSanPham l : loaiDAO.getAllLoaiSanPham()) cbLoai.addItem(l);
         } catch (Exception ex) {
-            dsLoai = new java.util.ArrayList<>();
+            System.err.println("Lỗi tải loại sản phẩm: " + ex.getMessage());
         }
-        for (LoaiSanPham l : dsLoai) cbLoai.addItem(l);
-        if (sp != null && sp.getLoaiSanPham() != null && sp.getLoaiSanPham().getMaLoai() > 0) {
-            cbLoai.setSelectedItem(sp.getLoaiSanPham());
+        if (sp != null && sp.getMaLoai() > 0) {
             for (int i = 0; i < cbLoai.getItemCount(); i++) {
-                if (cbLoai.getItemAt(i).getMaLoai() == sp.getLoaiSanPham().getMaLoai()) {
+                if (cbLoai.getItemAt(i).getMaLoai() == sp.getMaLoai()) {
                     cbLoai.setSelectedIndex(i);
                     break;
                 }
@@ -206,27 +210,13 @@ public class QuanLySanPham extends JPanel {
         String[] donVi = {"Cái", "Gói", "Chai", "Hộp", "Lon", "Thùng", "Kg"};
         JComboBox<String> cbDonVi = new JComboBox<>(donVi);
         if (sp != null && sp.getDonViTinh() != null) cbDonVi.setSelectedItem(sp.getDonViTinh());
-        JTextField txtGiaBan = new JTextField(sp == null ? "" : sp.getGiaBan().toPlainString());
-        JTextField txtGiaVon = new JTextField(sp == null ? "" :
-                (sp.getGiaVon() == null ? "0" : sp.getGiaVon().toPlainString()));
+        JTextField txtGiaBan = new JTextField(sp == null ? "" : String.valueOf(sp.getGiaBan()));
+        JTextField txtGiaVon = new JTextField(sp == null ? "0" : String.valueOf(sp.getGiaVon()));
         JTextField txtTon = new JTextField(sp == null ? "0" : String.valueOf(sp.getTonKho()));
         JTextField txtNguong = new JTextField(sp == null ? "5" : String.valueOf(sp.getTonToiThieu()));
         String[] trangThai = {"DANG_BAN", "NGUNG_BAN"};
         JComboBox<String> cbTrangThai = new JComboBox<>(trangThai);
         if (sp != null) cbTrangThai.setSelectedItem(sp.getTrangThai());
-
-        // Nhà cung cấp của sản phẩm
-        JComboBox<NhaCungCap> cbNCC = new JComboBox<>();
-        List<NhaCungCap> dsNCC = nccDAO.getAllNhaCungCap();
-        for (NhaCungCap n : dsNCC) cbNCC.addItem(n);
-        if (sp != null && sp.getMaNhaCungCap() > 0) {
-            for (int i = 0; i < cbNCC.getItemCount(); i++) {
-                if (cbNCC.getItemAt(i).getMaNCC() == sp.getMaNhaCungCap()) {
-                    cbNCC.setSelectedIndex(i);
-                    break;
-                }
-            }
-        }
 
         form.add(new JLabel("Mã vạch *"));
         form.add(txtMaVach);
@@ -246,8 +236,6 @@ public class QuanLySanPham extends JPanel {
         form.add(txtNguong);
         form.add(new JLabel("Trạng thái"));
         form.add(cbTrangThai);
-        form.add(new JLabel("Nhà cung cấp"));
-        form.add(cbNCC);
 
         JPanel pnlNut = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnLuu = new JButton("Lưu");
@@ -267,25 +255,25 @@ public class QuanLySanPham extends JPanel {
                     JOptionPane.showMessageDialog(dialog, "Mã vạch và tên sản phẩm là bắt buộc.");
                     return;
                 }
-                BigDecimal giaBan = new BigDecimal(txtGiaBan.getText().trim());
-                BigDecimal giaVon = txtGiaVon.getText().trim().isEmpty() ? BigDecimal.ZERO
-                        : new BigDecimal(txtGiaVon.getText().trim());
+                java.math.BigDecimal giaBan = new java.math.BigDecimal(txtGiaBan.getText().trim());
+                String giaVonStr = txtGiaVon.getText().trim();
+                java.math.BigDecimal giaVon = giaVonStr.isEmpty()
+                        ? java.math.BigDecimal.ZERO : new java.math.BigDecimal(giaVonStr);
                 int nguong = Integer.parseInt(txtNguong.getText().trim());
                 int ton = Integer.parseInt(txtTon.getText().trim());
 
                 SanPham formSP = new SanPham();
-                formSP.setMaSanPham(sp == null ? 0 : sp.getMaSanPham());
+                formSP.setMaSP(sp == null ? 0 : sp.getMaSP());
                 formSP.setMaVach(maVach);
-                formSP.setTenSanPham(ten);
-                formSP.setLoaiSanPham((LoaiSanPham) cbLoai.getSelectedItem());
+                formSP.setTenSP(ten);
+                LoaiSanPham loaiChon = (LoaiSanPham) cbLoai.getSelectedItem();
+                formSP.setMaLoai(loaiChon == null ? null : loaiChon.getMaLoai());
                 formSP.setDonViTinh((String) cbDonVi.getSelectedItem());
                 formSP.setGiaBan(giaBan);
                 formSP.setGiaVon(giaVon);
                 formSP.setTonKho(ton);
                 formSP.setTonToiThieu(nguong);
                 formSP.setTrangThai((String) cbTrangThai.getSelectedItem());
-                NhaCungCap nccChon = (NhaCungCap) cbNCC.getSelectedItem();
-                formSP.setMaNhaCungCap(nccChon == null ? 0 : nccChon.getMaNCC());
 
                 boolean ok;
                 if (sp == null) {
@@ -293,6 +281,7 @@ public class QuanLySanPham extends JPanel {
                 } else {
                     // Không sửa tồn kho qua form (tồn chỉ đổi qua bán/nhập)
                     formSP.setTonKho(sp.getTonKho());
+                    formSP.setHinhAnh(sp.getHinhAnh());
                     ok = sanPhamDAO.sua(formSP);
                 }
                 if (ok) {

@@ -245,7 +245,7 @@ public class Login extends JFrame {
             return;
         }
 
-        if (tkDung.getQuyen() == null) {
+        if (tkDung.getMaQuyen() <= 0) {
             JOptionPane.showMessageDialog(this, "Tài khoản chưa được gán quyền. Liên hệ quản lý.",
                     "Lỗi phân quyền", JOptionPane.ERROR_MESSAGE);
             return;

@@ -1,112 +1,140 @@
 package dao;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 import connectDB.DatabaseConnection;
 import entities.ChiTietNhapHang;
-import entities.NhaCungCap;
-import entities.NhanVien;
 import entities.PhieuNhapHang;
 import entities.SanPham;
 
-/** DAO cho phiếu nhập hàng: tạo phiếu + cập nhật tồn kho/giá vốn trong 1 transaction. */
 public class PhieuNhapHangDAO {
+
+    private static final String SELECT_COLS =
+            "SELECT MaPN, NgayNhap, MaNCC, MaNV, TongTien, GhiChu, TrangThai FROM PhieuNhapHang";
 
     private PhieuNhapHang map(ResultSet rs) throws SQLException {
         PhieuNhapHang pn = new PhieuNhapHang();
-        pn.setMaPhieuNhap(rs.getInt("MaPN"));
+        pn.setMaPN(rs.getInt("MaPN"));
         pn.setNgayNhap(rs.getTimestamp("NgayNhap"));
-        NhaCungCap ncc = new NhaCungCap();
-        ncc.setMaNCC(rs.getInt("MaNCC"));
-        ncc.setTenNCC(rs.getString("TenNCC"));
-        pn.setNhaCungCap(ncc);
-        NhanVien nv = new NhanVien();
-        nv.setMaNV(rs.getInt("MaNV"));
-        nv.setTen(rs.getString("TenNV"));
-        pn.setNhanVien(nv);
-        pn.setTongTienNhap(rs.getBigDecimal("TongTien"));
+
+        int maNCC = rs.getInt("MaNCC");
+        pn.setMaNCC(rs.wasNull() ? null : maNCC);
+        int maNV = rs.getInt("MaNV");
+        pn.setMaNV(rs.wasNull() ? null : maNV);
+
+        pn.setTongTien(rs.getBigDecimal("TongTien"));
         pn.setGhiChu(rs.getString("GhiChu"));
+        pn.setTrangThai(rs.getString("TrangThai"));
         return pn;
     }
-
-    private static final String SELECT_JOIN =
-            "SELECT pn.MaPN, pn.NgayNhap, pn.MaNCC, ncc.TenNCC, pn.MaNV, " +
-            "nv.Ho + ' ' + nv.Ten AS TenNV, pn.TongTien, pn.GhiChu " +
-            "FROM PhieuNhapHang pn " +
-            "LEFT JOIN NhaCungCap ncc ON pn.MaNCC = ncc.MaNCC " +
-            "LEFT JOIN NhanVien nv ON pn.MaNV = nv.MaNV";
 
     /**
      * Tạo phiếu nhập: INSERT phiếu + chi tiết, cộng tồn kho, cập nhật giá vốn.
      * Toàn bộ nằm trong 1 transaction — trả về mã phiếu, -1 nếu lỗi (đã rollback).
      */
     public int taoPhieuNhap(PhieuNhapHang pn, List<ChiTietNhapHang> dsChiTiet) {
-        String sqlPN = "INSERT INTO PhieuNhapHang (NgayNhap, MaNCC, MaNV, TongTien, GhiChu) VALUES (?, ?, ?, ?, ?)";
+        String sqlPN = "INSERT INTO PhieuNhapHang (NgayNhap, MaNCC, MaNV, TongTien, GhiChu, TrangThai) " +
+                       "VALUES (?, ?, ?, ?, ?, ?)";
         String sqlCT = "INSERT INTO ChiTietNhapHang (MaPN, MaSP, SoLuong, DonGiaNhap) VALUES (?, ?, ?, ?)";
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+            System.out.println("[PhieuNhapHangDAO] got connection, autoCommit=" + conn.getAutoCommit());
             conn.setAutoCommit(false);
+
             try {
                 int maPN;
                 try (PreparedStatement ps = conn.prepareStatement(sqlPN, Statement.RETURN_GENERATED_KEYS)) {
-                    ps.setTimestamp(1, new Timestamp(pn.getNgayNhap().getTime()));
-                    ps.setInt(2, pn.getNhaCungCap().getMaNCC());
-                    ps.setInt(3, pn.getNhanVien().getMaNV());
-                    ps.setBigDecimal(4, pn.getTongTienNhap());
+                    System.out.println("[PhieuNhapHangDAO] preparing INSERT PhieuNhapHang...");
+                    ps.setTimestamp(1, pn.getNgayNhap() == null
+                            ? new java.sql.Timestamp(System.currentTimeMillis()) : pn.getNgayNhap());
+                    if (pn.getMaNCC() == null) ps.setNull(2, java.sql.Types.INTEGER);
+                    else ps.setInt(2, pn.getMaNCC());
+                    if (pn.getMaNV() == null) ps.setNull(3, java.sql.Types.INTEGER);
+                    else ps.setInt(3, pn.getMaNV());
+                    ps.setBigDecimal(4, pn.getTongTien() == null ? BigDecimal.ZERO : pn.getTongTien());
                     ps.setString(5, pn.getGhiChu());
+                    ps.setString(6, pn.getTrangThai() == null ? "HOAN_TAT" : pn.getTrangThai());
+                    System.out.println("[PhieuNhapHangDAO] executing INSERT PhieuNhapHang...");
                     ps.executeUpdate();
+                    System.out.println("[PhieuNhapHangDAO] INSERT PhieuNhapHang done");
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         if (!keys.next()) throw new SQLException("Không lấy được mã phiếu nhập");
                         maPN = keys.getInt(1);
                     }
                 }
 
-                SanPhamDAO sanPhamDAO = new SanPhamDAO();
+                System.out.println("[PhieuNhapHangDAO] maPN=" + maPN + ", dsChiTiet size=" + dsChiTiet.size());
+                // Lấy dữ liệu sản phẩm TRƯỚC khi update (tránh lock conflict giữa 2 connection)
+                System.out.println("[PhieuNhapHangDAO] starting chi tiet loop...");
                 for (ChiTietNhapHang ct : dsChiTiet) {
+                    // 1. Insert chi tiết
                     try (PreparedStatement ps = conn.prepareStatement(sqlCT)) {
                         ps.setInt(1, maPN);
-                        ps.setInt(2, ct.getSanPham().getMaSanPham());
+                        ps.setInt(2, ct.getMaSP());
                         ps.setInt(3, ct.getSoLuong());
                         ps.setBigDecimal(4, ct.getDonGiaNhap());
                         ps.executeUpdate();
                     }
 
-                    // Cộng tồn kho
+                    // 2. Đọc tonKho và giaVon HIỆN TẠI từ SanPham (trong cùng transaction)
+                    BigDecimal tonKhoHienTai = null;
+                    BigDecimal giaVonHienTai = null;
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "SELECT TonKho, GiaVon FROM SanPham WHERE MaSP = ?")) {
+                        ps.setInt(1, ct.getMaSP());
+                        try (ResultSet rs = ps.executeQuery()) {
+                            if (rs.next()) {
+                                tonKhoHienTai = rs.getBigDecimal("TonKho");
+                                giaVonHienTai = rs.getBigDecimal("GiaVon");
+                            }
+                        }
+                    }
+                    System.out.println("[PhieuNhapHangDAO] MaSP=" + ct.getMaSP()
+                        + ", tonKhoHienTai=" + tonKhoHienTai
+                        + ", giaVonHienTai=" + giaVonHienTai);
+
+                    // 3. Cộng tồn kho
                     try (PreparedStatement ps = conn.prepareStatement(
                             "UPDATE SanPham SET TonKho = TonKho + ? WHERE MaSP = ?")) {
                         ps.setInt(1, ct.getSoLuong());
-                        ps.setInt(2, ct.getSanPham().getMaSanPham());
+                        ps.setInt(2, ct.getMaSP());
                         ps.executeUpdate();
                     }
 
-                    // Cập nhật giá vốn = trung bình có trọng số
-                    SanPham sp = sanPhamDAO.getByMaSP(ct.getSanPham().getMaSanPham());
-                    if (sp != null) {
-                        BigDecimal tonCu = BigDecimal.valueOf(Math.max(sp.getTonKho() - ct.getSoLuong(), 0));
-                        BigDecimal giaVonCu = sp.getGiaVon() == null ? BigDecimal.ZERO : sp.getGiaVon();
-                        BigDecimal giaVonMoi = giaVonCu.multiply(tonCu)
-                                .add(ct.getDonGiaNhap().multiply(BigDecimal.valueOf(ct.getSoLuong())))
-                                .divide(tonCu.add(BigDecimal.valueOf(ct.getSoLuong())), 0, java.math.RoundingMode.HALF_UP);
-                        try (PreparedStatement ps = conn.prepareStatement(
-                                "UPDATE SanPham SET GiaVon = ? WHERE MaSP = ?")) {
-                            ps.setBigDecimal(1, giaVonMoi);
-                            ps.setInt(2, ct.getSanPham().getMaSanPham());
-                            ps.executeUpdate();
+                    // 4. Cập nhật giá vốn = trung bình có trọng số
+                    if (tonKhoHienTai != null) {
+                        BigDecimal tonCu = tonKhoHienTai;
+                        BigDecimal giaVonCu = giaVonHienTai == null ? BigDecimal.ZERO : giaVonHienTai;
+                        BigDecimal tongSau = tonCu.add(BigDecimal.valueOf(ct.getSoLuong()));
+                        if (tongSau.compareTo(BigDecimal.ZERO) > 0) {
+                            BigDecimal giaVonMoi = giaVonCu.multiply(tonCu)
+                                    .add(ct.getDonGiaNhap().multiply(BigDecimal.valueOf(ct.getSoLuong())))
+                                    .divide(tongSau, 0, RoundingMode.HALF_UP);
+                            try (PreparedStatement ps = conn.prepareStatement(
+                                    "UPDATE SanPham SET GiaVon = ? WHERE MaSP = ?")) {
+                                ps.setBigDecimal(1, giaVonMoi);
+                                ps.setInt(2, ct.getMaSP());
+                                ps.executeUpdate();
+                            }
                         }
                     }
                 }
 
+                System.out.println("[PhieuNhapHangDAO] committing transaction...");
                 conn.commit();
+                System.out.println("[PhieuNhapHangDAO] commit done, returning " + maPN);
                 return maPN;
             } catch (SQLException e) {
+                System.out.println("[PhieuNhapHangDAO] SQLException: " + e.getMessage());
+                e.printStackTrace();
                 try { conn.rollback(); } catch (SQLException ex) {
                     System.err.println("Lỗi rollback: " + ex.getMessage());
                 }
@@ -114,6 +142,8 @@ public class PhieuNhapHangDAO {
                 return -1;
             }
         } catch (SQLException e) {
+            System.out.println("[PhieuNhapHangDAO] Connection SQLException: " + e.getMessage());
+            e.printStackTrace();
             System.err.println("Lỗi kết nối DB: " + e.getMessage());
             return -1;
         }
@@ -122,7 +152,7 @@ public class PhieuNhapHangDAO {
     public List<PhieuNhapHang> dsPhieuNhap() {
         List<PhieuNhapHang> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement ps = conn.prepareStatement(SELECT_JOIN + " ORDER BY pn.NgayNhap DESC");
+             PreparedStatement ps = conn.prepareStatement(SELECT_COLS + " ORDER BY NgayNhap DESC");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) list.add(map(rs));
         } catch (SQLException e) {
@@ -132,7 +162,7 @@ public class PhieuNhapHangDAO {
     }
 
     public PhieuNhapHang getByMaPN(int maPN) {
-        String sql = SELECT_JOIN + " WHERE pn.MaPN = ?";
+        String sql = SELECT_COLS + " WHERE MaPN = ?";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, maPN);
@@ -147,25 +177,14 @@ public class PhieuNhapHangDAO {
 
     public List<ChiTietNhapHang> getChiTietByMaPN(int maPN) {
         List<ChiTietNhapHang> list = new ArrayList<>();
-        String sql = "SELECT ct.MaPN, ct.MaSP, ct.SoLuong, ct.DonGiaNhap, sp.TenSP, sp.MaVach " +
-                     "FROM ChiTietNhapHang ct JOIN SanPham sp ON ct.MaSP = sp.MaSP WHERE ct.MaPN = ?";
+        String sql = "SELECT MaPN, MaSP, SoLuong, DonGiaNhap FROM ChiTietNhapHang WHERE MaPN = ?";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, maPN);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    PhieuNhapHang pn = new PhieuNhapHang();
-                    pn.setMaPhieuNhap(rs.getInt("MaPN"));
-                    SanPham sp = new SanPham();
-                    sp.setMaSanPham(rs.getInt("MaSP"));
-                    sp.setTenSanPham(rs.getString("TenSP"));
-                    sp.setMaVach(rs.getString("MaVach"));
-                    ChiTietNhapHang ct = new ChiTietNhapHang();
-                    ct.setPhieuNhap(pn);
-                    ct.setSanPham(sp);
-                    ct.setSoLuong(rs.getInt("SoLuong"));
-                    ct.setDonGiaNhap(rs.getBigDecimal("DonGiaNhap"));
-                    list.add(ct);
+                    list.add(new ChiTietNhapHang(rs.getInt("MaPN"), rs.getInt("MaSP"),
+                            rs.getInt("SoLuong"), rs.getBigDecimal("DonGiaNhap")));
                 }
             }
         } catch (SQLException e) {
